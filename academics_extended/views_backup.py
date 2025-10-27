@@ -1,0 +1,1 @@
+# Backup completo de views.py antes de limpiar
