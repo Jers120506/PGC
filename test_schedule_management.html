@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Horarios Académicos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .schedule-cell {
+            min-height: 80px;
+            border: 1px solid #dee2e6;
+            padding: 5px;
+            font-size: 0.85em;
+        }
+        .schedule-item {
+            background: #e7f3ff;
+            border: 1px solid #b6d7ff;
+            border-radius: 4px;
+            padding: 4px;
+            margin: 2px 0;
+            font-size: 0.8em;
+        }
+        .time-header {
+            background: #f8f9fa;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+        }
+        .day-header {
+            background: #e9ecef;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <h1>Gestión de Horarios Académicos</h1>
+        
+        <!-- Panel de Control -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Panel de Control</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <button class="btn btn-primary w-100" onclick="loadResources()">Cargar Recursos</button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-success w-100" onclick="showCreateModal()">Crear Horario</button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-info w-100" onclick="loadScheduleMatrix()">Ver Matriz</button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-warning w-100" onclick="loadSchedulesList()">Listar Horarios</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">Filtros</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <select class="form-select" id="filter-course">
+                                    <option value="">Todos los Cursos</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filter-teacher">
+                                    <option value="">Todos los Profesores</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filter-classroom">
+                                    <option value="">Todos los Salones</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-secondary w-100" onclick="applyFilters()">Aplicar Filtros</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de Resultados -->
+        <div class="row">
+            <div class="col-md-12">
+                <div id="results-area">
+                    <div class="alert alert-info">
+                        <h5>Bienvenido al Sistema de Gestión de Horarios</h5>
+                        <p>Use los botones del panel de control para empezar:</p>
+                        <ul>
+                            <li><strong>Cargar Recursos:</strong> Ver cursos, profesores, salones y materias disponibles</li>
+                            <li><strong>Crear Horario:</strong> Asignar una materia a un curso en un horario específico</li>
+                            <li><strong>Ver Matriz:</strong> Visualizar todos los horarios en formato calendario</li>
+                            <li><strong>Listar Horarios:</strong> Ver lista detallada de todos los horarios</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Crear Horario -->
+    <div class="modal fade" id="createScheduleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Crear Nuevo Horario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createScheduleForm">
+                        <div class="mb-3">
+                            <label class="form-label">Curso</label>
+                            <select class="form-select" name="course_id" required>
+                                <option value="">Seleccionar Curso</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Materia</label>
+                            <select class="form-select" name="subject_id" required>
+                                <option value="">Seleccionar Materia</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Profesor</label>
+                            <select class="form-select" name="teacher_id" required>
+                                <option value="">Seleccionar Profesor</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Salón</label>
+                            <select class="form-select" name="classroom_id" required>
+                                <option value="">Seleccionar Salón</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Franja Horaria</label>
+                            <select class="form-select" name="time_slot_id" required>
+                                <option value="">Seleccionar Horario</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Día de la Semana</label>
+                            <select class="form-select" name="weekday" required>
+                                <option value="">Seleccionar Día</option>
+                                <option value="1">Lunes</option>
+                                <option value="2">Martes</option>
+                                <option value="3">Miércoles</option>
+                                <option value="4">Jueves</option>
+                                <option value="5">Viernes</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notas (Opcional)</label>
+                            <textarea class="form-control" name="notes" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="createSchedule()">Crear Horario</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let resources = null;
+        const API_BASE = '/academic-system/api';
+
+        // Función para cargar recursos
+        async function loadResources() {
+            try {
+                const response = await fetch(`${API_BASE}/schedules/resources/`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    resources = data.data;
+                    displayResources(resources);
+                    populateSelectOptions();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Mostrar recursos en pantalla
+        function displayResources(data) {
+            const html = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Recursos del Sistema</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <h6>Cursos (${data.courses.length})</h6>
+                                <ul class="list-group list-group-flush">
+                                    ${data.courses.slice(0, 5).map(course => 
+                                        `<li class="list-group-item py-1">${course.name}</li>`
+                                    ).join('')}
+                                    ${data.courses.length > 5 ? '<li class="list-group-item py-1"><small>... y más</small></li>' : ''}
+                                </ul>
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Profesores (${data.teachers.length})</h6>
+                                <ul class="list-group list-group-flush">
+                                    ${data.teachers.slice(0, 5).map(teacher => 
+                                        `<li class="list-group-item py-1">${teacher.name}</li>`
+                                    ).join('')}
+                                    ${data.teachers.length > 5 ? '<li class="list-group-item py-1"><small>... y más</small></li>' : ''}
+                                </ul>
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Salones (${data.classrooms.length})</h6>
+                                <ul class="list-group list-group-flush">
+                                    ${data.classrooms.slice(0, 5).map(classroom => 
+                                        `<li class="list-group-item py-1">${classroom.name}</li>`
+                                    ).join('')}
+                                    ${data.classrooms.length > 5 ? '<li class="list-group-item py-1"><small>... y más</small></li>' : ''}
+                                </ul>
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Materias (${data.subjects.length})</h6>
+                                <ul class="list-group list-group-flush">
+                                    ${data.subjects.slice(0, 5).map(subject => 
+                                        `<li class="list-group-item py-1">${subject.name}</li>`
+                                    ).join('')}
+                                    ${data.subjects.length > 5 ? '<li class="list-group-item py-1"><small>... y más</small></li>' : ''}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <h6>Franjas Horarias (${data.time_slots.length})</h6>
+                                <div class="d-flex flex-wrap">
+                                    ${data.time_slots.map(slot => 
+                                        `<span class="badge bg-secondary me-2 mb-2">${slot.name}: ${slot.start_time}-${slot.end_time}</span>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('results-area').innerHTML = html;
+        }
+
+        // Llenar opciones de selects
+        function populateSelectOptions() {
+            if (!resources) return;
+
+            // Filtros
+            populateSelect('filter-course', resources.courses, 'name');
+            populateSelect('filter-teacher', resources.teachers, 'name');
+            populateSelect('filter-classroom', resources.classrooms, 'name');
+
+            // Modal de creación
+            populateSelect('createScheduleForm [name="course_id"]', resources.courses, 'name');
+            populateSelect('createScheduleForm [name="subject_id"]', resources.subjects, 'name');
+            populateSelect('createScheduleForm [name="teacher_id"]', resources.teachers, 'name');
+            populateSelect('createScheduleForm [name="classroom_id"]', resources.classrooms, 'name');
+            populateSelect('createScheduleForm [name="time_slot_id"]', resources.time_slots, 'name');
+        }
+
+        function populateSelect(selector, items, textField) {
+            const select = document.querySelector(selector);
+            if (!select) return;
+            
+            // Mantener la primera opción
+            const firstOption = select.options[0];
+            select.innerHTML = '';
+            select.appendChild(firstOption);
+            
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item[textField];
+                select.appendChild(option);
+            });
+        }
+
+        // Cargar matriz de horarios
+        async function loadScheduleMatrix() {
+            try {
+                const response = await fetch(`${API_BASE}/schedules/matrix/`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    displayScheduleMatrix(data.data);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Mostrar matriz de horarios
+        function displayScheduleMatrix(data) {
+            const weekdays = data.weekdays;
+            const matrix = data.matrix;
+            
+            let html = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Matriz de Horarios - ${data.academic_year}</h5>
+                        <small>Total de horarios: ${data.total_schedules}</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th class="time-header">Horario</th>
+                                        ${weekdays.map(day => `<th class="day-header">${day.name}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+            `;
+            
+            matrix.forEach(timeSlotData => {
+                html += `
+                    <tr>
+                        <td class="time-header">
+                            <strong>${timeSlotData.time_slot.name}</strong><br>
+                            <small>${timeSlotData.time_slot.start_time} - ${timeSlotData.time_slot.end_time}</small>
+                        </td>
+                `;
+                
+                weekdays.forEach(day => {
+                    const daySchedules = timeSlotData.days[day.value].schedules;
+                    html += `<td class="schedule-cell">`;
+                    
+                    daySchedules.forEach(schedule => {
+                        html += `
+                            <div class="schedule-item" title="Doble clic para editar" ondblclick="editSchedule(${schedule.id})">
+                                <strong>${schedule.subject.name}</strong><br>
+                                <small>${schedule.course.name}</small><br>
+                                <small>${schedule.teacher.name}</small><br>
+                                <small>${schedule.classroom.name}</small>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</td>`;
+                });
+                
+                html += `</tr>`;
+            });
+            
+            html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('results-area').innerHTML = html;
+        }
+
+        // Cargar lista de horarios
+        async function loadSchedulesList() {
+            try {
+                const response = await fetch(`${API_BASE}/schedules/`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    displaySchedulesList(data.data);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Mostrar lista de horarios
+        function displaySchedulesList(schedules) {
+            let html = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Lista de Horarios (${schedules.length})</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Día</th>
+                                        <th>Horario</th>
+                                        <th>Curso</th>
+                                        <th>Materia</th>
+                                        <th>Profesor</th>
+                                        <th>Salón</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+            `;
+            
+            schedules.forEach(schedule => {
+                html += `
+                    <tr>
+                        <td>${schedule.weekday_name}</td>
+                        <td>${schedule.time_slot.name}<br><small>${schedule.time_slot.start_time}-${schedule.time_slot.end_time}</small></td>
+                        <td>${schedule.course.name}</td>
+                        <td>${schedule.subject.name}</td>
+                        <td>${schedule.teacher.name}</td>
+                        <td>${schedule.classroom.name}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editSchedule(${schedule.id})">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${schedule.id})">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('results-area').innerHTML = html;
+        }
+
+        // Mostrar modal de creación
+        function showCreateModal() {
+            if (!resources) {
+                alert('Primero carga los recursos del sistema');
+                return;
+            }
+            const modal = new bootstrap.Modal(document.getElementById('createScheduleModal'));
+            modal.show();
+        }
+
+        // Crear horario
+        async function createSchedule() {
+            const form = document.getElementById('createScheduleForm');
+            const formData = new FormData(form);
+            
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/schedules/create/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    alert('Horario creado exitosamente: ' + result.message);
+                    bootstrap.Modal.getInstance(document.getElementById('createScheduleModal')).hide();
+                    form.reset();
+                    // Recargar la vista actual si está mostrando horarios
+                    if (document.querySelector('.schedule-cell')) {
+                        loadScheduleMatrix();
+                    }
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Funciones auxiliares
+        function editSchedule(scheduleId) {
+            alert(`Función de edición para horario ${scheduleId} - Por implementar`);
+        }
+
+        function deleteSchedule(scheduleId) {
+            if (confirm('¿Está seguro de eliminar este horario?')) {
+                alert(`Función de eliminación para horario ${scheduleId} - Por implementar`);
+            }
+        }
+
+        function applyFilters() {
+            alert('Función de filtros - Por implementar');
+        }
+
+        // Obtener CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Cargar recursos al inicio
+        document.addEventListener('DOMContentLoaded', function() {
+            loadResources();
+        });
+    </script>
+</body>
+</html>
