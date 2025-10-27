@@ -1,0 +1,776 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Grupos y Directores de Curso - Sistema Administrativo{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
+<style>
+.course-card {
+    transition: transform 0.2s ease-in-out;
+    border-left: 4px solid transparent;
+    min-height: 120px;
+}
+
+.course-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.course-card.with-teacher {
+    border-left-color: #28a745;
+}
+
+.course-card.without-teacher {
+    border-left-color: #ffc107;
+}
+
+.teacher-badge {
+    background: linear-gradient(45deg, #007bff, #6f42c1);
+    color: white;
+    border-radius: 20px;
+    padding: 5px 15px;
+    font-size: 0.85rem;
+    display: inline-block;
+    margin: 2px;
+}
+
+.grade-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.teacher-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+}
+
+.avatar-placeholder {
+    background: linear-gradient(45deg, #007bff, #6f42c1);
+    border-radius: 50%;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+}
+
+.assignment-form {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.quick-actions {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+/* Estilos mejorados para DataTables */
+.dataTables_wrapper .dataTables_filter {
+    display: none;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.course-info {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+}
+
+.course-details {
+    flex: 1;
+}
+
+.course-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #495057;
+}
+
+.course-stats {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="card-title mb-0">
+                                <i class="fas fa-users me-2"></i>
+                                Gestión de Grupos y Directores de Curso
+                            </h1>
+                            <p class="card-text mb-0">
+                                Asignación de docentes como directores de grupo - Año académico {{ current_year.name|default:"2025" }}
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'administration:dashboard' %}" class="btn btn-outline-light">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Volver al Panel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Cursos
+                            </div>
+                            <div class="h5 mb-0">{{ total_courses|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-school fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Con Director Asignado
+                            </div>
+                            <div class="h5 mb-0">{{ courses_with_teacher|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Sin Director
+                            </div>
+                            <div class="h5 mb-0">{{ courses_without_teacher|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Profesores Disponibles
+                            </div>
+                            <div class="h5 mb-0">{{ unassigned_teachers_count|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vista Principal de Cursos por Grado -->
+    <div class="row">
+        <div class="col-12">
+            {% if courses_by_grade %}
+                {% for grade_name, grade_info in courses_by_grade.items %}
+                <div class="grade-section">
+                    <h3 class="mb-4">
+                        <i class="fas fa-graduation-cap me-2 text-primary"></i>
+                        {{ grade_name }}
+                        <small class="text-muted">({{ grade_info.courses|length }} curso{{ grade_info.courses|length|pluralize:"s" }})</small>
+                    </h3>
+                    
+                    <div class="row">
+                        {% for course in grade_info.courses %}
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="card course-card {% if course.homeroom_teacher %}with-teacher{% else %}without-teacher{% endif %}">
+                                <div class="card-body">
+                                    <div class="course-info">
+                                        <div class="course-details">
+                                            <div class="course-name">
+                                                {{ course.grade.name }} - Sección {{ course.section }}
+                                            </div>
+                                            <div class="course-stats">
+                                                <i class="fas fa-users me-1"></i>
+                                                Máx: {{ course.max_students }} estudiantes
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if course.homeroom_teacher %}
+                                        <div class="mt-3">
+                                            <div class="d-flex align-items-center">
+                                                {% if course.homeroom_teacher.profile.avatar %}
+                                                    <img src="{{ course.homeroom_teacher.profile.avatar.url }}" 
+                                                         alt="{{ course.homeroom_teacher.get_full_name }}" 
+                                                         class="teacher-avatar">
+                                                {% else %}
+                                                    <div class="avatar-placeholder">
+                                                        {{ course.homeroom_teacher.first_name.0 }}{{ course.homeroom_teacher.last_name.0 }}
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <strong>{{ course.homeroom_teacher.get_full_name }}</strong><br>
+                                                    <small class="text-success">
+                                                        <i class="fas fa-check-circle me-1"></i>
+                                                        Director de Grupo
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">
+                                                <button class="btn btn-sm btn-outline-warning" 
+                                                        onclick="changeTeacher({{ course.id }}, '{{ course.grade.name }} {{ course.section }}')">
+                                                    <i class="fas fa-edit me-1"></i>Cambiar
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        onclick="removeTeacher({{ course.id }}, '{{ course.grade.name }} {{ course.section }}')">
+                                                    <i class="fas fa-times me-1"></i>Quitar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="mt-3">
+                                            <div class="alert alert-warning py-2 px-3 mb-2">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                                <small>Sin director de grupo asignado</small>
+                                            </div>
+                                            <button class="btn btn-success btn-sm w-100" 
+                                                    onclick="assignTeacher({{ course.id }}, '{{ course.grade.name }} {{ course.section }}')">
+                                                <i class="fas fa-plus me-1"></i>
+                                                Asignar Director
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-school fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No hay cursos disponibles</h4>
+                        <p class="text-muted mb-4">
+                            No se encontraron cursos para el año académico actual.
+                        </p>
+                        <button class="btn btn-primary" onclick="createCourse()">
+                            <i class="fas fa-plus me-1"></i>
+                            Crear Primer Curso
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Resumen de Profesores -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-user-check me-2"></i>
+                        Profesores con Grupos Asignados ({{ assigned_teachers_count }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if assigned_teachers %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="assignedTeachersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Profesor</th>
+                                        <th>Grupos Asignados</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in assigned_teachers %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if assignment.teacher.profile.avatar %}
+                                                    <img src="{{ assignment.teacher.profile.avatar.url }}" 
+                                                         alt="{{ assignment.teacher.get_full_name }}" 
+                                                         class="teacher-avatar">
+                                                {% else %}
+                                                    <div class="avatar-placeholder">
+                                                        {{ assignment.teacher.first_name.0 }}{{ assignment.teacher.last_name.0 }}
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <strong>{{ assignment.teacher.get_full_name }}</strong><br>
+                                                    <small class="text-muted">{{ assignment.teacher.email }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% for course in assignment.courses %}
+                                                <span class="teacher-badge">
+                                                    {{ course.grade.name }} {{ course.section }}
+                                                </span>
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            No hay profesores asignados como directores de grupo.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Profesores Disponibles ({{ unassigned_teachers_count }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if unassigned_teachers %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="availableTeachersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Profesor</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for teacher in unassigned_teachers %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if teacher.profile.avatar %}
+                                                    <img src="{{ teacher.profile.avatar.url }}" 
+                                                         alt="{{ teacher.get_full_name }}" 
+                                                         class="teacher-avatar">
+                                                {% else %}
+                                                    <div class="avatar-placeholder">
+                                                        {{ teacher.first_name.0 }}{{ teacher.last_name.0 }}
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <strong>{{ teacher.get_full_name }}</strong><br>
+                                                    <small class="text-muted">{{ teacher.email }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-success" 
+                                                    onclick="quickAssign({{ teacher.id }}, '{{ teacher.get_full_name }}')">
+                                                <i class="fas fa-plus me-1"></i>Asignar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-check-circle me-1"></i>
+                            Todos los profesores están asignados.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Asignar/Cambiar Director de Grupo -->
+<div class="modal fade" id="assignTeacherModal" tabindex="-1" aria-labelledby="assignTeacherModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignTeacherModalLabel">
+                    <i class="fas fa-user-plus me-2"></i>
+                    <span id="assignModalTitle">Asignar Director de Grupo</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <input type="hidden" id="courseId" name="course_id">
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Asignando director de grupo para: <strong id="courseName"></strong>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="teacherSelect" class="form-label">
+                            <i class="fas fa-user-tie me-1"></i>
+                            Seleccionar Profesor
+                        </label>
+                        <select class="form-select" id="teacherSelect" required>
+                            <option value="">Selecciona un profesor...</option>
+                            {% for teacher in available_teachers %}
+                                <option value="{{ teacher.id }}">
+                                    {{ teacher.get_full_name|default:teacher.username }} 
+                                    ({{ teacher.email|default:"Sin email" }})
+                                    {% if teacher.course_set.exists %}
+                                        - Ya asignado a {{ teacher.course_set.count }} curso(s)
+                                    {% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-success" onclick="confirmAssignment(event)">
+                    <i class="fas fa-check me-1"></i>
+                    <span id="confirmAssignText">Asignar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery (necesario para DataTables) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+// Variables globales
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Función para obtener cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Función para asignar profesor a un curso
+function assignTeacher(courseId, courseName) {
+    document.getElementById('courseId').value = courseId;
+    document.getElementById('courseName').textContent = courseName;
+    document.getElementById('assignModalTitle').textContent = 'Asignar Director de Grupo';
+    document.getElementById('confirmAssignText').textContent = 'Asignar';
+    document.getElementById('teacherSelect').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('assignTeacherModal'));
+    modal.show();
+}
+
+// Función para cambiar profesor de un curso
+function changeTeacher(courseId, courseName) {
+    document.getElementById('courseId').value = courseId;
+    document.getElementById('courseName').textContent = courseName;
+    document.getElementById('assignModalTitle').textContent = 'Cambiar Director de Grupo';
+    document.getElementById('confirmAssignText').textContent = 'Cambiar';
+    document.getElementById('teacherSelect').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('assignTeacherModal'));
+    modal.show();
+}
+
+// Función para confirmar asignación
+function confirmAssignment(event) {
+    const courseId = document.getElementById('courseId').value;
+    const teacherId = document.getElementById('teacherSelect').value;
+    
+    console.log('CourseId:', courseId, 'TeacherId:', teacherId); // Debug
+    
+    if (!courseId || !teacherId) {
+        alert('Por favor selecciona un profesor');
+        return;
+    }
+    
+    // Deshabilitar botón durante la petición
+    const confirmButton = event.target;
+    const originalText = confirmButton.innerHTML;
+    confirmButton.disabled = true;
+    confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Procesando...';
+    
+    // Enviar petición AJAX
+    fetch('{% url "administration:assign_teacher_api" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({
+            course_id: courseId,
+            teacher_id: teacherId
+        })
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            alert('✅ ' + data.message);
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('assignTeacherModal'));
+            if (modal) {
+                modal.hide();
+            }
+            // Recargar la página para ver los cambios
+            location.reload();
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('❌ Error al asignar profesor. Revisa la consola para más detalles.');
+    })
+    .finally(() => {
+        // Restaurar botón
+        confirmButton.disabled = false;
+        confirmButton.innerHTML = originalText;
+    });
+}
+
+// Función para quitar profesor de un curso
+function removeTeacher(courseId, courseName) {
+    if (confirm(`¿Estás seguro de quitar el director del curso ${courseName}?`)) {
+        // Llamada AJAX para quitar el profesor
+        fetch('/administration/api/remove-teacher/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                'course_id': courseId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mostrar mensaje de éxito con más detalles
+                showSuccessMessage(data.message);
+                // Recargar la página después de un breve delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showErrorMessage(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorMessage('Error de conexión. Verifica tu conexión a internet e intenta de nuevo.');
+        });
+    }
+}
+
+// Función para asignación rápida
+function quickAssign(teacherId, teacherName) {
+    // Usar el modal de asignación pero pre-llenar el profesor
+    const availableCourses = document.querySelectorAll('.course-card.without-teacher');
+    if (availableCourses.length === 0) {
+        alert('No hay cursos disponibles sin director asignado');
+        return;
+    }
+    
+    // Por ahora, mostrar una lista simple de cursos disponibles
+    let courseOptions = 'Cursos disponibles:\n';
+    availableCourses.forEach((card, index) => {
+        const courseInfo = card.querySelector('.course-name').textContent;
+        courseOptions += `${index + 1}. ${courseInfo}\n`;
+    });
+    
+    alert(`Asignación rápida para ${teacherName}:\n\n${courseOptions}\nUsa el botón "Asignar Director" en el curso deseado.`);
+}
+
+
+
+// Función para crear curso
+function createCourse() {
+    alert('Funcionalidad en desarrollo: Crear nuevo curso\n\nPor ahora puedes crear cursos a través del panel de administración de Django.');
+}
+
+// Funciones para mostrar mensajes
+function showSuccessMessage(message) {
+    // Crear toast de éxito
+    const toast = `
+        <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    // Mostrar toast (si no hay contenedor, usar alert como respaldo)
+    if (document.querySelector('.toast-container')) {
+        document.querySelector('.toast-container').insertAdjacentHTML('beforeend', toast);
+        const toastElement = document.querySelector('.toast:last-child');
+        const bsToast = new bootstrap.Toast(toastElement);
+        bsToast.show();
+    } else {
+        alert(`✅ ${message}`);
+    }
+}
+
+function showErrorMessage(message) {
+    // Crear toast de error
+    const toast = `
+        <div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-exclamation-circle me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    // Mostrar toast (si no hay contenedor, usar alert como respaldo)
+    if (document.querySelector('.toast-container')) {
+        document.querySelector('.toast-container').insertAdjacentHTML('beforeend', toast);
+        const toastElement = document.querySelector('.toast:last-child');
+        const bsToast = new bootstrap.Toast(toastElement);
+        bsToast.show();
+    } else {
+        alert(`❌ ${message}`);
+    }
+}
+
+
+
+// Inicialización cuando se carga la página
+$(document).ready(function() {
+    console.log('Sistema de Gestión de Grupos inicializado');
+    
+    // Agregar contenedor de toasts si no existe
+    if (!document.querySelector('.toast-container')) {
+        const toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '1055';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Inicializar DataTables para las tablas de profesores si existen
+    if ($('#assignedTeachersTable').length > 0) {
+        $('#assignedTeachersTable').DataTable({
+            responsive: true,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            },
+            pageLength: 5,
+            searching: true,
+            ordering: true,
+            info: true,
+            paging: true
+        });
+    }
+    
+    if ($('#availableTeachersTable').length > 0) {
+        $('#availableTeachersTable').DataTable({
+            responsive: true,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            },
+            pageLength: 5,
+            searching: true,
+            ordering: true,
+            info: true,
+            paging: true
+        });
+    }
+});
+</script>
+{% endblock %}

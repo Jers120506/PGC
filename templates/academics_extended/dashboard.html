@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sistema Académico - IE La Balsa{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/labalsa_styles.css' %}" rel="stylesheet">
+<style>
+    .academic-header {
+        background: linear-gradient(135deg, #1b5e20, #2e7d32);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 25px rgba(27, 94, 32, 0.3);
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-left: 5px solid #2e7d32;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #1b5e20;
+        line-height: 1;
+    }
+    
+    .stats-label {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #2e7d32, #388e3c);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+    
+    .quick-actions {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .action-btn {
+        background: linear-gradient(135deg, #2e7d32, #388e3c);
+        border: none;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 10px;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0.5rem;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+    
+    .action-btn:hover {
+        background: linear-gradient(135deg, #1b5e20, #2e7d32);
+        transform: translateY(-2px);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .recent-activity {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    
+    .activity-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .role-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        background: #e8f5e8;
+        color: #1b5e20;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="academic-header text-center">
+        <h1><i class="fas fa-graduation-cap"></i> Sistema Académico IE La Balsa</h1>
+        <p class="mb-0">Gestión Educativa Integral</p>
+        {% if current_academic_year %}
+            <small class="d-block mt-2">Año Académico: {{ current_academic_year.name }}</small>
+        {% endif %}
+    </div>
+    
+    <!-- Dashboard específico por rol -->
+    {% if user.profile.role == 'admin' %}
+        {% include 'academics_extended/partials/admin_dashboard_content.html' %}
+    {% elif user.profile.role == 'teacher' %}
+        {% include 'academics_extended/partials/teacher_dashboard_content.html' %}
+    {% elif user.profile.role == 'student' %}
+        {% include 'academics_extended/partials/student_dashboard_content.html' %}
+    {% elif user.profile.role == 'secretary' %}
+        {% include 'academics_extended/partials/secretary_dashboard_content.html' %}
+    {% else %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            Rol no reconocido. Contacta al administrador del sistema.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Actualizar estadísticas cada 5 minutos
+setTimeout(function() {
+    location.reload();
+}, 300000);
+
+// Animaciones para las tarjetas
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.stats-card');
+    cards.forEach(function(card, index) {
+        setTimeout(function() {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.5s ease';
+            
+            setTimeout(function() {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

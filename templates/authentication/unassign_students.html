@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Desasignar Estudiantes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .unassign-card {
+        background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(238, 90, 36, 0.1));
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 107, 107, 0.3);
+        box-shadow: 0 8px 32px rgba(255, 107, 107, 0.1);
+    }
+    
+    .teacher-info {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    
+    .checkbox-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+    }
+    
+    .checkbox-item:hover {
+        background: rgba(255, 107, 107, 0.1);
+        border-left-color: #ff6b6b;
+    }
+    
+    .checkbox-item.selected {
+        background: rgba(255, 107, 107, 0.2);
+        border-left-color: #ff6b6b;
+    }
+    
+    .student-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'authentication:admin_dashboard' %}">Dashboard Admin</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'authentication:assign_students' %}">Asignar Estudiantes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Desasignar Estudiantes</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            {% if teacher %}
+                <!-- Información del Profesor -->
+                <div class="teacher-info p-4 mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="mb-2">
+                                <i class="bi bi-person-badge me-2"></i>
+                                {{ teacher.get_full_name|default:teacher.username }}
+                            </h4>
+                            <p class="text-muted mb-2">
+                                <i class="bi bi-envelope me-1"></i>
+                                {{ teacher.email }}
+                            </p>
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-people me-1"></i>
+                                {{ assigned_students.count }} estudiante{{ assigned_students.count|pluralize }} asignado{{ assigned_students.count|pluralize }}
+                            </span>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <i class="bi bi-person-badge display-4 text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario de Desasignación -->
+                {% if assigned_students %}
+                    <div class="unassign-card p-4">
+                        <h5 class="mb-4">
+                            <i class="bi bi-person-dash me-2"></i>
+                            Desasignar Estudiantes
+                        </h5>
+                        
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Atención:</strong> Los estudiantes seleccionados serán desasignados de este profesor y quedarán sin profesor asignado.
+                        </div>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-people me-1"></i>
+                                    Seleccionar estudiantes a desasignar:
+                                </label>
+                                <div class="student-list border rounded p-3" style="background: rgba(255, 255, 255, 0.03);">
+                                    {% for choice in form.students %}
+                                        <div class="checkbox-item" data-checkbox="{{ choice.choice_value }}">
+                                            <div class="form-check">
+                                                {{ choice.tag }}
+                                                <label class="form-check-label w-100" for="{{ choice.choice_value }}">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="bi bi-person me-2"></i>
+                                                        <div>
+                                                            <div class="fw-semibold">{{ choice.choice_label }}</div>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% if form.students.errors %}
+                                    <div class="text-danger mt-2">{{ form.students.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-danger" id="unassignBtn" disabled>
+                                    <i class="bi bi-person-dash me-1"></i>
+                                    Desasignar Estudiantes Seleccionados
+                                </button>
+                                <a href="{% url 'authentication:assign_students' %}" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>
+                                    Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                {% else %}
+                    <div class="unassign-card p-4 text-center">
+                        <i class="bi bi-info-circle display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">Sin Estudiantes Asignados</h5>
+                        <p class="text-muted">Este profesor no tiene estudiantes asignados actualmente.</p>
+                        <a href="{% url 'authentication:assign_students' %}" class="btn btn-primary">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Volver a Asignaciones
+                        </a>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="unassign-card p-4 text-center">
+                    <i class="bi bi-exclamation-triangle display-4 text-danger mb-3"></i>
+                    <h5 class="text-danger">Profesor No Encontrado</h5>
+                    <p class="text-muted">El profesor que intentas editar no existe o no tiene permisos válidos.</p>
+                    <a href="{% url 'authentication:assign_students' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver a Asignaciones
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]');
+    const unassignBtn = document.getElementById('unassignBtn');
+    let selectedCount = 0;
+    
+    function updateButtonState() {
+        if (selectedCount > 0) {
+            unassignBtn.disabled = false;
+            unassignBtn.innerHTML = `<i class="bi bi-person-dash me-1"></i> Desasignar ${selectedCount} Estudiante${selectedCount > 1 ? 's' : ''}`;
+        } else {
+            unassignBtn.disabled = true;
+            unassignBtn.innerHTML = '<i class="bi bi-person-dash me-1"></i> Desasignar Estudiantes Seleccionados';
+        }
+    }
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const item = this.closest('.checkbox-item');
+            
+            if (this.checked) {
+                selectedCount++;
+                item.classList.add('selected');
+            } else {
+                selectedCount--;
+                item.classList.remove('selected');
+            }
+            
+            updateButtonState();
+        });
+    });
+    
+    // Confirmación antes de enviar
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (selectedCount === 0) {
+            e.preventDefault();
+            alert('Por favor selecciona al menos un estudiante para desasignar.');
+            return;
+        }
+        
+        const confirmation = confirm(`¿Estás seguro de que quieres desasignar ${selectedCount} estudiante${selectedCount > 1 ? 's' : ''}? Esta acción no se puede deshacer.`);
+        if (!confirmation) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

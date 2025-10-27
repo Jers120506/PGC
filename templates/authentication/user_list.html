@@ -1,0 +1,488 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Usuarios - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-management-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .user-management-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="user-pattern" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23user-pattern)"/></svg>');
+        opacity: 0.3;
+    }
+    
+    .stats-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        padding: 25px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        margin-bottom: 15px;
+    }
+    
+    .users-table {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        overflow: hidden;
+    }
+    
+    .table thead th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 20px 15px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.85rem;
+    }
+    
+    .table tbody td {
+        padding: 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+    
+    .role-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .role-student {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+    }
+    
+    .role-teacher {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+    }
+    
+    .role-admin {
+        background: linear-gradient(135deg, #f39c12, #d68910);
+        color: white;
+    }
+    
+    .btn-create-user {
+        background: linear-gradient(135deg, #27ae60, #2ecc71);
+        border: none;
+        border-radius: 10px;
+        padding: 12px 25px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        color: white;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-create-user:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(39, 174, 96, 0.3);
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+        color: white;
+    }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        margin-right: 15px;
+    }
+    
+    .breadcrumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+    }
+    
+    .breadcrumb-item a {
+        color: #667eea;
+        text-decoration: none;
+    }
+    
+    .breadcrumb-item.active {
+        color: #333;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'projects:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Gestión de Usuarios</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="user-management-header">
+        <div class="container position-relative">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="mb-3">
+                        <i class="bi bi-people-fill me-3"></i>Gestión de Usuarios
+                    </h1>
+                    <p class="mb-0 opacity-75">
+                        Administrar estudiantes, profesores y administradores del sistema
+                    </p>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <a href="{% url 'authentication:admin_create_user' %}" class="btn-create-user">
+                        <i class="bi bi-person-plus me-2"></i>Crear Usuario
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h3 class="mb-1">{{ total_users }}</h3>
+                <p class="text-muted mb-0">Total Usuarios</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                    <i class="bi bi-mortarboard"></i>
+                </div>
+                <h3 class="mb-1">{{ total_students }}</h3>
+                <p class="text-muted mb-0">Estudiantes</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                    <i class="bi bi-person-workspace"></i>
+                </div>
+                <h3 class="mb-1">{{ total_teachers }}</h3>
+                <p class="text-muted mb-0">Profesores</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #f39c12, #d68910);">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h3 class="mb-1">{{ total_admins }}</h3>
+                <p class="text-muted mb-0">Administradores</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Usuarios -->
+    <div class="users-table">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Rol</th>
+                    <th>Email</th>
+                    <th>Fecha de Registro</th>
+                    <th>Último Login</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar" style="background: linear-gradient(135deg, 
+                                {% if user.profile.role == 'student' %}#3498db, #2980b9
+                                {% elif user.profile.role == 'teacher' %}#e74c3c, #c0392b
+                                {% else %}#f39c12, #d68910{% endif %});">
+                                {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                            </div>
+                            <div>
+                                <strong>{{ user.get_full_name|default:user.username }}</strong><br>
+                                <small class="text-muted">@{{ user.username }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="role-badge role-{{ user.profile.role }}">
+                            {{ user.profile.get_role_display }}
+                        </span>
+                    </td>
+                    <td>{{ user.email|default:"-" }}</td>
+                    <td>{{ user.date_joined|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        {% if user.last_login %}
+                            {{ user.last_login|date:"d/m/Y H:i" }}
+                        {% else %}
+                            <span class="text-muted">Nunca</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.is_active %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                        {% endif %}
+                        {% if user.is_superuser %}
+                            <span class="badge bg-warning text-dark ms-1">Superuser</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <!-- Botón de Editar -->
+                            <a href="{% url 'authentication:admin_edit_user' user.id %}" 
+                               class="btn btn-sm btn-outline-primary" 
+                               title="Editar perfil de {{ user.get_full_name|default:user.username }}">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            
+                            <!-- Botón de Eliminar -->
+                            {% if user != request.user %}
+                                {% if not user.profile.is_admin or total_admins > 1 %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmDelete('{{ user.username }}', '{{ user.profile.get_role_display }}', {{ user.id }}, '{{ user.email }}')"
+                                            title="Eliminar usuario">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                {% else %}
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled
+                                            title="No se puede eliminar el último administrador">
+                                        <i class="bi bi-shield-lock"></i>
+                                    </button>
+                                {% endif %}
+                            {% else %}
+                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled
+                                        title="No puedes eliminarte a ti mismo">
+                                    <i class="bi bi-person-x"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        <i class="bi bi-inbox display-4 text-muted"></i><br>
+                        <span class="text-muted">No hay usuarios para mostrar</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <nav aria-label="Paginación" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">Primera</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+            </li>
+            
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Modal de Confirmación para Eliminar Usuario -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient text-white" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+                <h5 class="modal-title fw-bold" id="deleteUserModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="mx-auto mb-3" style="width: 80px; height: 80px; background: rgba(220, 53, 69, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-person-x text-danger" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">¿Eliminar Usuario?</h6>
+                    <p class="text-muted">
+                        Estás a punto de eliminar permanentemente al usuario:
+                    </p>
+                </div>
+                
+                <div class="bg-light p-3 rounded mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="bi bi-person-circle text-muted" style="font-size: 2rem;"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 fw-bold" id="deleteUserName">Usuario</h6>
+                            <span class="badge" id="deleteUserRole">Rol</span> 
+                            <small class="text-muted ms-2" id="deleteUserEmail">email@ejemplo.com</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-danger border-0" style="background: rgba(220, 53, 69, 0.1);">
+                    <div class="d-flex">
+                        <i class="bi bi-exclamation-circle-fill text-danger me-2" style="font-size: 1.2rem;"></i>
+                        <div>
+                            <strong>¡Atención!</strong> Esta acción es irreversible.<br>
+                            <small>Se eliminarán todos los datos asociados al usuario permanentemente.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmDeleteCheck">
+                    <label class="form-check-label text-muted" for="confirmDeleteCheck">
+                        <small>Entiendo que esta acción no se puede deshacer</small>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <form id="deleteUserForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>
+                        <i class="bi bi-trash me-1"></i> Eliminar Usuario
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(username, role, userId, email) {
+    // Llenar información del usuario
+    document.getElementById('deleteUserName').textContent = username;
+    document.getElementById('deleteUserRole').textContent = role;
+    document.getElementById('deleteUserEmail').textContent = email || 'Sin email';
+    
+    // Configurar el badge del rol con colores
+    const roleBadge = document.getElementById('deleteUserRole');
+    roleBadge.className = 'badge ';
+    if (role === 'Administrador') {
+        roleBadge.className += 'bg-danger';
+    } else if (role === 'Profesor') {
+        roleBadge.className += 'bg-warning text-dark';
+    } else {
+        roleBadge.className += 'bg-info';
+    }
+    
+    // Configurar la acción del formulario
+    document.getElementById('deleteUserForm').action = "{% url 'authentication:admin_delete_user' 0 %}".replace('0', userId);
+    
+    // Resetear el checkbox y botón
+    document.getElementById('confirmDeleteCheck').checked = false;
+    document.getElementById('confirmDeleteBtn').disabled = true;
+    
+    // Mostrar el modal
+    var modal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+    modal.show();
+}
+
+// Habilitar/deshabilitar botón según checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('confirmDeleteCheck');
+    const deleteBtn = document.getElementById('confirmDeleteBtn');
+    
+    checkbox.addEventListener('change', function() {
+        deleteBtn.disabled = !this.checked;
+        
+        if (this.checked) {
+            deleteBtn.innerHTML = '<i class="bi bi-trash me-1"></i> Sí, Eliminar Usuario';
+            deleteBtn.className = 'btn btn-danger';
+        } else {
+            deleteBtn.innerHTML = '<i class="bi bi-trash me-1"></i> Eliminar Usuario';
+            deleteBtn.className = 'btn btn-danger';
+        }
+    });
+    
+    // Agregar efecto visual al botón cuando esté habilitado
+    deleteBtn.addEventListener('mouseenter', function() {
+        if (!this.disabled) {
+            this.style.transform = 'scale(1.02)';
+        }
+    });
+    
+    deleteBtn.addEventListener('mouseleave', function() {
+        this.style.transform = 'scale(1)';
+    });
+});
+</script>
+{% endblock %}

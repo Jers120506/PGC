@@ -1,0 +1,2281 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuración Académica - Administración{% endblock %}
+
+{% load static %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="card-title mb-0">
+                                <i class="fas fa-graduation-cap me-2"></i>
+                                Configuración Académica
+                            </h1>
+                            <p class="card-text mb-0">
+                                Gestión de estructura académica: grados y materias
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'administration:dashboard' %}" class="btn btn-light">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Volver al Panel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Académicas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Grados</div>
+                            <div class="h5 mb-0">{{ total_models.grades }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-layer-group fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Materias</div>
+                            <div class="h5 mb-0">{{ total_models.subjects }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Años Académicos</div>
+                            <div class="h5 mb-0">{{ total_models.academic_years }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-secondary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Usuarios</div>
+                            <div class="h5 mb-0">{{ total_models.users }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Panel Principal -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <ul class="nav nav-tabs card-header-tabs" id="academicTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="grades-tab" data-bs-toggle="tab" data-bs-target="#grades"
+                                    type="button" role="tab" aria-controls="grades" aria-selected="true">
+                                <i class="fas fa-layer-group me-1"></i>Grados
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="subjects-tab" data-bs-toggle="tab" data-bs-target="#subjects"
+                                    type="button" role="tab" aria-controls="subjects" aria-selected="false">
+                                <i class="fas fa-book me-1"></i>Materias
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments"
+                                    type="button" role="tab" aria-controls="assignments" aria-selected="false">
+                                <i class="fas fa-link me-1"></i>Asignaciones
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="enrollments-tab" data-bs-toggle="tab" data-bs-target="#enrollments"
+                                    type="button" role="tab" aria-controls="enrollments" aria-selected="false">
+                                <i class="fas fa-user-graduate me-1"></i>Inscripciones
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="academicTabsContent">
+                        <!-- Tab de Grados -->
+                        <div class="tab-pane fade show active" id="grades" role="tabpanel" aria-labelledby="grades-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Gestión de Grados</h5>
+                                <button class="btn btn-primary" onclick="createGrade()">
+                                    <i class="fas fa-plus me-1"></i>Nuevo Grado
+                                </button>
+                            </div>
+                            <div id="gradesContent">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin fa-2x"></i><br>
+                                    Cargando grados...
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab de Materias -->
+                        <div class="tab-pane fade" id="subjects" role="tabpanel" aria-labelledby="subjects-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Gestión de Materias</h5>
+                                <button class="btn btn-success" onclick="createSubject()">
+                                    <i class="fas fa-plus me-1"></i>Nueva Materia
+                                </button>
+                            </div>
+                            <div id="subjectsContent">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin fa-2x"></i><br>
+                                    Cargando materias...
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab de Asignaciones -->
+                        <div class="tab-pane fade" id="assignments" role="tabpanel" aria-labelledby="assignments-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Asignación de Materias a Grados</h5>
+                                <div class="d-flex align-items-center gap-2">
+                                    <select id="gradeSelect" class="form-select" style="min-width: 200px;" onchange="loadAssignments()">
+                                        <option value="">🔍 Seleccionar Grado...</option>
+                                    </select>
+                                    <button class="btn btn-success" onclick="openAssignmentModal()" id="addAssignmentBtn" disabled>
+                                        <i class="fas fa-plus me-1"></i>Asignar Materia
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="refreshAssignments()" title="Actualizar">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Información de ayuda -->
+                            <div class="alert alert-info d-flex align-items-center" id="helpInfo">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <div>
+                                    <strong>¿Cómo usar esta sección?</strong><br>
+                                    1. Seleccione un grado del menú desplegable<br>
+                                    2. Vea las materias ya asignadas a ese grado<br>
+                                    3. Use "Asignar Materia" para agregar nuevas materias al grado
+                                </div>
+                            </div>
+                            
+                            <div id="assignmentsContent">
+                                <div class="text-center text-muted py-5">
+                                    <i class="fas fa-graduation-cap fa-4x mb-3" style="opacity: 0.3;"></i><br>
+                                    <h6>Seleccione un grado para comenzar</h6>
+                                    <p class="text-sm">Las materias asignadas aparecerán aquí</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab de Inscripciones -->
+                        <div class="tab-pane fade" id="enrollments" role="tabpanel" aria-labelledby="enrollments-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5><i class="fas fa-user-graduate me-2"></i>Sistema de Inscripción de Estudiantes</h5>
+                                <button class="btn btn-primary" onclick="createStudent()">
+                                    <i class="fas fa-plus"></i> Nuevo Estudiante
+                                </button>
+                            </div>
+                            
+                            <!-- Filtros y Controles -->
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <label for="filterCourse" class="form-label">Filtrar por Curso:</label>
+                                    <select class="form-select" id="filterCourse" onchange="filterStudentsByCourse()">
+                                        <option value="">Todos los cursos</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="searchStudent" class="form-label">Buscar Estudiante:</label>
+                                    <input type="text" class="form-control" id="searchStudent" 
+                                           placeholder="Nombre o código..." onkeyup="searchStudents()">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Estadísticas:</label>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-primary" id="totalStudentsCount">0 estudiantes</span>
+                                        <span class="badge bg-success" id="enrolledStudentsCount">0 inscritos</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Lista de Estudiantes -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="m-0 font-weight-bold text-primary">
+                                        <i class="fas fa-users me-2"></i>
+                                        Estudiantes Registrados
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="studentsTableContainer">
+                                        <div class="text-center text-muted py-5">
+                                            <i class="fas fa-user-graduate fa-4x mb-3" style="opacity: 0.3;"></i><br>
+                                            <h6>Cargando estudiantes...</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Acciones -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tools me-2"></i>
+                        Herramientas del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="manageGrades()">
+                            <i class="fas fa-layer-group me-2"></i>
+                            Gestionar Grados
+                        </button>
+                        <button class="btn btn-success" onclick="manageSubjects()">
+                            <i class="fas fa-book me-2"></i>
+                            Gestionar Materias
+                        </button>
+                        <button class="btn btn-warning" onclick="manageSchedules()">
+                            <i class="fas fa-clock me-2"></i>
+                            Sistema de Horarios
+                        </button>
+                        <hr>
+                        <button class="btn btn-outline-secondary" onclick="viewReports()">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Ver Reportes
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información del Sistema -->
+            <div class="card mt-3">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Estado del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Configuración:</strong><br>
+                        {% if current_academic_year %}
+                            <span class="badge bg-success">Año académico configurado</span>
+                        {% else %}
+                            <span class="badge bg-warning">Sin año académico</span>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Estructura:</strong><br>
+                        {% if total_models.grades > 0 %}
+                            {{ total_models.grades }} grados configurados
+                        {% else %}
+                            <span class="text-muted">No hay grados configurados</span>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Materias:</strong><br>
+                        {% if total_models.subjects > 0 %}
+                            {{ total_models.subjects }} materias configuradas
+                        {% else %}
+                            <span class="text-muted">No hay materias configuradas</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Grados -->
+<div class="modal fade" id="gradeModal" tabindex="-1" aria-labelledby="gradeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="gradeForm" onsubmit="saveGrade(event)">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="gradeModalLabel">Nuevo Grado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="gradeId" name="id">
+                    
+                    <div class="mb-3">
+                        <label for="gradeName" class="form-label">
+                            <i class="fas fa-layer-group me-1"></i>Nombre del Grado *
+                        </label>
+                        <input type="text" class="form-control" id="gradeName" name="name" required 
+                               placeholder="Ej: 1° Primaria, 6° Bachillerato">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="gradeLevel" class="form-label">
+                            <i class="fas fa-graduation-cap me-1"></i>Nivel Educativo *
+                        </label>
+                        <select class="form-select" id="gradeLevel" name="level" required>
+                            <option value="">Seleccione un nivel</option>
+                            <option value="primaria">Primaria (1° - 5°)</option>
+                            <option value="bachillerato">Bachillerato (6° - 11°)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="gradeOrder" class="form-label">
+                            <i class="fas fa-sort me-1"></i>Orden *
+                        </label>
+                        <input type="number" class="form-control" id="gradeOrder" name="order" required 
+                               min="1" max="11" placeholder="1-11">
+                        <div class="form-text">Primaria: 1-5, Bachillerato: 6-11</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Guardar Grado
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Materias -->
+<div class="modal fade" id="subjectModal" tabindex="-1" aria-labelledby="subjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="subjectForm" onsubmit="saveSubject(event)">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="subjectModalLabel">Nueva Materia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="subjectId" name="id">
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="subjectName" class="form-label">
+                                    <i class="fas fa-book me-1"></i>Nombre de la Materia *
+                                </label>
+                                <input type="text" class="form-control" id="subjectName" name="name" required 
+                                       placeholder="Ej: Matemáticas, Biología">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="subjectCode" class="form-label">
+                                    <i class="fas fa-hashtag me-1"></i>Código *
+                                </label>
+                                <input type="text" class="form-control" id="subjectCode" name="code" required 
+                                       placeholder="MAT001" maxlength="10">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="subjectArea" class="form-label">
+                                    <i class="fas fa-tag me-1"></i>Área Académica *
+                                </label>
+                                <select class="form-select" id="subjectArea" name="area" required>
+                                    <option value="">Seleccione un área</option>
+                                    <option value="matematicas">Matemáticas</option>
+                                    <option value="ciencias">Ciencias Naturales</option>
+                                    <option value="sociales">Ciencias Sociales</option>
+                                    <option value="lenguaje">Lenguaje y Literatura</option>
+                                    <option value="ingles">Inglés</option>
+                                    <option value="educacion_fisica">Educación Física</option>
+                                    <option value="artes">Artes</option>
+                                    <option value="informatica">Informática</option>
+                                    <option value="religion">Religión</option>
+                                    <option value="etica">Ética y Valores</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="subjectHours" class="form-label">
+                                    <i class="fas fa-clock me-1"></i>Horas por Semana *
+                                </label>
+                                <input type="number" class="form-control" id="subjectHours" name="hours_per_week" required 
+                                       min="1" max="10" placeholder="1-10">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="subjectDescription" class="form-label">
+                            <i class="fas fa-align-left me-1"></i>Descripción (Opcional)
+                        </label>
+                        <textarea class="form-control" id="subjectDescription" name="description" rows="3" 
+                                  placeholder="Descripción de la materia..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i>Guardar Materia
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Asignaciones -->
+<div class="modal fade" id="assignmentModal" tabindex="-1" aria-labelledby="assignmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="assignmentForm" onsubmit="saveAssignment(event)">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignmentModalLabel">
+                        <i class="fas fa-link me-2"></i>Asignar Materia a Grado
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="assignmentId" name="id">
+                    
+                    <div class="mb-3">
+                        <label for="assignmentGrade" class="form-label">
+                            <i class="fas fa-layer-group me-1"></i>Grado *
+                        </label>
+                        <select class="form-select" id="assignmentGrade" name="grade_id" required onchange="loadAvailableSubjects(this.value)">
+                            <option value="">Seleccionar grado...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="assignmentSubject" class="form-label">
+                            <i class="fas fa-book me-1"></i>Materia *
+                        </label>
+                        <select class="form-select" id="assignmentSubject" name="subject_id" required onchange="autoFillHours(this)">
+                            <option value="">Primero seleccione un grado...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assignmentHours" class="form-label">
+                                    <i class="fas fa-clock me-1"></i>Horas por Semana *
+                                </label>
+                                <input type="number" class="form-control" id="assignmentHours" name="hours_per_week" required 
+                                       min="1" max="15" placeholder="1-15">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assignmentSemester" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Período *
+                                </label>
+                                <select class="form-select" id="assignmentSemester" name="semester" required>
+                                    <option value="anual">Anual</option>
+                                    <option value="primer_semestre">Primer Semestre</option>
+                                    <option value="segundo_semestre">Segundo Semestre</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="assignmentMandatory" name="is_mandatory" checked>
+                            <label class="form-check-label" for="assignmentMandatory">
+                                <i class="fas fa-exclamation-circle me-1"></i>Materia Obligatoria
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Guardar Asignación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Estudiante -->
+<div class="modal fade" id="studentModal" tabindex="-1" aria-labelledby="studentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="studentForm" onsubmit="saveStudent(event)">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="studentModalLabel">
+                        <i class="fas fa-user-graduate me-2"></i>Nuevo Estudiante
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="studentId" name="id">
+                    
+                    <!-- Información Personal -->
+                    <h6 class="mb-3"><i class="fas fa-user me-1"></i>Información Personal</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="studentCode" class="form-label">
+                                    <i class="fas fa-barcode me-1"></i>Código de Estudiante *
+                                </label>
+                                <input type="text" class="form-control" id="studentCode" name="student_id" 
+                                       placeholder="Ej: EST001" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="birthDate" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Fecha de Nacimiento *
+                                </label>
+                                <input type="date" class="form-control" id="birthDate" name="birth_date" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="firstName" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Nombres *
+                                </label>
+                                <input type="text" class="form-control" id="firstName" name="first_name" 
+                                       placeholder="Nombres del estudiante" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="lastName" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Apellidos *
+                                </label>
+                                <input type="text" class="form-control" id="lastName" name="last_name" 
+                                       placeholder="Apellidos del estudiante" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>Email *
+                                </label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       placeholder="correo@ejemplo.com" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>Teléfono
+                                </label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       placeholder="Número de contacto">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información Académica -->
+                    <hr>
+                    <h6 class="mb-3"><i class="fas fa-graduation-cap me-1"></i>Información Académica</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="studentCourse" class="form-label">
+                                    <i class="fas fa-book me-1"></i>Curso *
+                                </label>
+                                <select class="form-select" id="studentCourse" name="course_id" required>
+                                    <option value="">Seleccionar curso...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="enrollmentDate" class="form-label">
+                                    <i class="fas fa-calendar-plus me-1"></i>Fecha de Inscripción
+                                </label>
+                                <input type="date" class="form-control" id="enrollmentDate" name="enrollment_date">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información del Acudiente -->
+                    <hr>
+                    <h6 class="mb-3"><i class="fas fa-users me-1"></i>Información del Acudiente</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="guardianName" class="form-label">
+                                    <i class="fas fa-user-friends me-1"></i>Nombre del Acudiente
+                                </label>
+                                <input type="text" class="form-control" id="guardianName" name="guardian_name" 
+                                       placeholder="Nombre completo del acudiente">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="guardianPhone" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>Teléfono del Acudiente
+                                </label>
+                                <input type="tel" class="form-control" id="guardianPhone" name="guardian_phone" 
+                                       placeholder="Teléfono del acudiente">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">
+                            <i class="fas fa-map-marker-alt me-1"></i>Dirección
+                        </label>
+                        <textarea class="form-control" id="address" name="address" rows="2" 
+                                  placeholder="Dirección de residencia"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Guardar Estudiante
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Gestionar Inscripciones -->
+<div class="modal fade" id="enrollmentModal" tabindex="-1" aria-labelledby="enrollmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="enrollmentModalLabel">
+                    <i class="fas fa-user-plus me-2"></i>Gestionar Inscripción
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="enrollmentStudentInfo" class="alert alert-info">
+                    <i class="fas fa-user-graduate me-2"></i>
+                    <span id="enrollmentStudentName">Información del estudiante</span>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="availableCourses" class="form-label">
+                        <i class="fas fa-book me-1"></i>Cursos Disponibles
+                    </label>
+                    <select class="form-select" id="availableCourses">
+                        <option value="">Cargando cursos...</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="enrollmentNotes" class="form-label">
+                        <i class="fas fa-sticky-note me-1"></i>Notas de Inscripción
+                    </label>
+                    <textarea class="form-control" id="enrollmentNotes" rows="3" 
+                              placeholder="Observaciones sobre la inscripción..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="processEnrollment()">
+                    <i class="fas fa-user-plus me-1"></i>Inscribir Estudiante
+                </button>
+                <button type="button" class="btn btn-danger" onclick="processUnenrollment()" style="display: none;">
+                    <i class="fas fa-user-minus me-1"></i>Retirar del Curso
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ================== Inicialización ==================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== SISTEMA ACADÉMICO INICIADO ===');
+    
+    // Cargar datos iniciales
+    loadGrades();
+    loadSubjects();
+    
+    // Configurar eventos de pestañas
+    document.getElementById('grades-tab').addEventListener('shown.bs.tab', function() {
+        loadGrades();
+    });
+    
+    document.getElementById('subjects-tab').addEventListener('shown.bs.tab', function() {
+        loadSubjects();
+    });
+    
+    document.getElementById('assignments-tab').addEventListener('shown.bs.tab', function() {
+        console.log('=== PESTAÑA ASIGNACIONES ACTIVADA ===');
+        loadGradesForAssignment();
+        // Ocultar ayuda si ya hay un grado seleccionado
+        const gradeSelect = document.getElementById('gradeSelect');
+        if (gradeSelect && gradeSelect.value) {
+            document.getElementById('helpInfo').style.display = 'none';
+        }
+    });
+});
+
+// ================== Funciones para Grados ==================
+
+function loadGrades() {
+    console.log('=== CARGANDO GRADOS ===');
+    
+    fetch('/academic-system/api/grades/')
+        .then(response => {
+            console.log('Status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Respuesta:', data);
+            if (data.status === 'success') {
+                displayGrades(data.data);
+            } else {
+                showAlert('error', 'Error al cargar grados: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error de conexión al cargar grados');
+        });
+}
+
+function displayGrades(grades) {
+    const content = document.getElementById('gradesContent');
+    if (!content) {
+        console.error('No se encontró el contenedor gradesContent');
+        return;
+    }
+    
+    if (grades.length === 0) {
+        content.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-layer-group fa-3x mb-3"></i>
+                <h5>No hay grados configurados</h5>
+                <p>Comience creando el primer grado del sistema</p>
+                <button class="btn btn-primary" onclick="createGrade()">
+                    <i class="fas fa-plus me-1"></i>Crear Primer Grado
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Agrupar grados por nivel
+    const primaryGrades = grades.filter(g => g.level === 'primaria');
+    const secondaryGrades = grades.filter(g => g.level === 'bachillerato');
+    
+    let html = '';
+    
+    if (primaryGrades.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-primary border-bottom pb-2">
+                    <i class="fas fa-graduation-cap me-1"></i>Educación Primaria
+                </h6>
+                <div class="row">
+        `;
+        
+        primaryGrades.forEach(grade => {
+            html += createGradeCardHTML(grade);
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    if (secondaryGrades.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-info border-bottom pb-2">
+                    <i class="fas fa-university me-1"></i>Educación Secundaria
+                </h6>
+                <div class="row">
+        `;
+        
+        secondaryGrades.forEach(grade => {
+            html += createGradeCardHTML(grade);
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    content.innerHTML = html;
+}
+
+function createGradeCardHTML(grade) {
+    return `
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 border-start border-primary border-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">${grade.name}</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                    type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="editGrade(${grade.id})">
+                                    <i class="fas fa-edit me-1"></i>Editar
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteGrade(${grade.id})">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="card-text small text-muted mb-2">${grade.description || 'Sin descripción'}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-${grade.level === 'primaria' ? 'primary' : 'info'}">
+                            ${grade.level === 'primaria' ? 'Primaria' : 'Secundaria'}
+                        </span>
+                        <small class="text-muted">Grado ${grade.grade_number}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createGrade() {
+    // Limpiar formulario y mostrar modal
+    document.getElementById('gradeForm').reset();
+    document.getElementById('gradeId').value = '';
+    document.getElementById('gradeModalLabel').textContent = 'Nuevo Grado';
+    
+    const modal = new bootstrap.Modal(document.getElementById('gradeModal'));
+    modal.show();
+}
+
+function editGrade(id) {
+    // Obtener datos del grado para editar
+    fetch(`/academic-system/api/grades/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const grade = data.data;
+                
+                // Llenar formulario
+                document.getElementById('gradeId').value = grade.id;
+                document.getElementById('gradeName').value = grade.name;
+                document.getElementById('gradeLevel').value = grade.level;
+                document.getElementById('gradeOrder').value = grade.order;
+                
+                // Cambiar título y mostrar modal
+                document.getElementById('gradeModalLabel').textContent = 'Editar Grado';
+                const modal = new bootstrap.Modal(document.getElementById('gradeModal'));
+                modal.show();
+            } else {
+                showNotification('Error al cargar el grado: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al cargar el grado', 'error');
+        });
+}
+
+function deleteGrade(id) {
+    if (confirm('¿Está seguro de que desea eliminar este grado?\n\nEsta acción no se puede deshacer.')) {
+        fetch(`/academic-system/api/grades/${id}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showNotification('Grado eliminado exitosamente', 'success');
+                loadGrades(); // Recargar la lista
+            } else {
+                showNotification('Error al eliminar el grado: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al eliminar el grado', 'error');
+        });
+    }
+}
+
+function saveGrade(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const gradeId = formData.get('id');
+    const isEdit = gradeId && gradeId !== '';
+    
+    const url = isEdit ? 
+        `/academic-system/api/grades/${gradeId}/update/` : 
+        `/academic-system/api/grades/create/`;
+    
+    const data = {
+        name: formData.get('name'),
+        level: formData.get('level'),
+        order: parseInt(formData.get('order'))
+    };
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification(
+                isEdit ? 'Grado actualizado exitosamente' : 'Grado creado exitosamente', 
+                'success'
+            );
+            
+            // Cerrar modal y recargar lista
+            bootstrap.Modal.getInstance(document.getElementById('gradeModal')).hide();
+            loadGrades();
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error al guardar el grado', 'error');
+    });
+}
+
+// ================== Funciones para Materias ==================
+
+function loadSubjects() {
+    console.log('=== CARGANDO MATERIAS ===');
+    
+    fetch('/academic-system/api/subjects/')
+        .then(response => {
+            console.log('Status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Respuesta:', data);
+            if (data.status === 'success') {
+                displaySubjects(data.data);
+            } else {
+                showAlert('error', 'Error al cargar materias: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error de conexión al cargar materias');
+        });
+}
+
+function displaySubjects(subjects) {
+    const content = document.getElementById('subjectsContent');
+    if (!content) {
+        console.error('No se encontró el contenedor subjectsContent');
+        return;
+    }
+    
+    if (subjects.length === 0) {
+        content.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-book fa-3x mb-3"></i>
+                <h5>No hay materias configuradas</h5>
+                <p>Comience creando la primera materia del sistema</p>
+                <button class="btn btn-success" onclick="createSubject()">
+                    <i class="fas fa-plus me-1"></i>Crear Primera Materia
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Agrupar materias por área
+    const subjectsByArea = {};
+    subjects.forEach(subject => {
+        const area = subject.area || 'otras';
+        if (!subjectsByArea[area]) {
+            subjectsByArea[area] = [];
+        }
+        subjectsByArea[area].push(subject);
+    });
+    
+    // Definir colores y nombres de áreas
+    const areaConfig = {
+        'matematicas': { name: 'Matemáticas', color: 'primary', icon: 'calculator' },
+        'ciencias': { name: 'Ciencias', color: 'success', icon: 'atom' },
+        'lenguaje': { name: 'Lenguaje', color: 'info', icon: 'pen-fancy' },
+        'sociales': { name: 'Ciencias Sociales', color: 'warning', icon: 'globe' },
+        'artes': { name: 'Artes', color: 'danger', icon: 'palette' },
+        'ingles': { name: 'Inglés', color: 'secondary', icon: 'language' },
+        'educacion_fisica': { name: 'Educación Física', color: 'dark', icon: 'running' },
+        'informatica': { name: 'Informática', color: 'primary', icon: 'laptop-code' },
+        'religion': { name: 'Religión', color: 'light', icon: 'cross' },
+        'etica': { name: 'Ética', color: 'secondary', icon: 'balance-scale' },
+        'otras': { name: 'Otras Materias', color: 'muted', icon: 'book' }
+    };
+    
+    let html = '';
+    
+    Object.keys(subjectsByArea).forEach(area => {
+        const config = areaConfig[area] || areaConfig['otras'];
+        html += `
+            <div class="mb-4">
+                <h6 class="text-${config.color} border-bottom pb-2">
+                    <i class="fas fa-${config.icon} me-1"></i>${config.name}
+                </h6>
+                <div class="row">
+        `;
+        
+        subjectsByArea[area].forEach(subject => {
+            html += createSubjectCardHTML(subject, config.color);
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
+}
+
+function createSubjectCardHTML(subject, colorClass) {
+    return `
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 border-start border-${colorClass} border-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">${subject.name}</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                    type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="editSubject(${subject.id})">
+                                    <i class="fas fa-edit me-1"></i>Editar
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteSubject(${subject.id})">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <span class="badge bg-secondary me-1">${subject.code}</span>
+                        <span class="badge bg-${colorClass}">${subject.area_display || subject.area}</span>
+                    </div>
+                    <p class="card-text small text-muted mb-2">${subject.description || 'Sin descripción'}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>${subject.hours_per_week}h/semana
+                        </small>
+                        <small class="text-success fw-bold">
+                            <i class="fas fa-users me-1"></i>0 estudiantes
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createSubject() {
+    // Limpiar formulario y mostrar modal
+    document.getElementById('subjectForm').reset();
+    document.getElementById('subjectId').value = '';
+    document.getElementById('subjectModalLabel').textContent = 'Nueva Materia';
+    
+    const modal = new bootstrap.Modal(document.getElementById('subjectModal'));
+    modal.show();
+}
+
+function editSubject(id) {
+    // Obtener datos de la materia para editar
+    fetch(`/academic-system/api/subjects/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const subject = data.data;
+                
+                // Llenar formulario
+                document.getElementById('subjectId').value = subject.id;
+                document.getElementById('subjectName').value = subject.name;
+                document.getElementById('subjectCode').value = subject.code;
+                document.getElementById('subjectArea').value = subject.area;
+                document.getElementById('subjectHours').value = subject.hours_per_week;
+                document.getElementById('subjectDescription').value = subject.description || '';
+                
+                // Cambiar título y mostrar modal
+                document.getElementById('subjectModalLabel').textContent = 'Editar Materia';
+                const modal = new bootstrap.Modal(document.getElementById('subjectModal'));
+                modal.show();
+            } else {
+                showNotification('Error al cargar la materia: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al cargar la materia', 'error');
+        });
+}
+
+function deleteSubject(id) {
+    if (confirm('¿Está seguro de que desea eliminar esta materia?\n\nEsta acción no se puede deshacer.')) {
+        fetch(`/academic-system/api/subjects/${id}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showNotification('Materia eliminada exitosamente', 'success');
+                loadSubjects(); // Recargar la lista
+            } else {
+                showNotification('Error al eliminar la materia: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al eliminar la materia', 'error');
+        });
+    }
+}
+
+function saveSubject(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const subjectId = formData.get('id');
+    const isEdit = subjectId && subjectId !== '';
+    
+    const url = isEdit ? 
+        `/academic-system/api/subjects/${subjectId}/update/` : 
+        `/academic-system/api/subjects/create/`;
+    
+    const data = {
+        name: formData.get('name'),
+        code: formData.get('code'),
+        area: formData.get('area'),
+        hours_per_week: parseInt(formData.get('hours_per_week')),
+        description: formData.get('description') || ''
+    };
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification(
+                isEdit ? 'Materia actualizada exitosamente' : 'Materia creada exitosamente', 
+                'success'
+            );
+            
+            // Cerrar modal y recargar lista
+            bootstrap.Modal.getInstance(document.getElementById('subjectModal')).hide();
+            loadSubjects();
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error al guardar la materia', 'error');
+    });
+}
+
+// ================== Funciones de Asignaciones ==================
+
+function loadAssignments() {
+    console.log('=== CARGANDO ASIGNACIONES ===');
+    
+    const gradeSelect = document.getElementById('gradeSelect');
+    const selectedGrade = gradeSelect.value;
+    const addBtn = document.getElementById('addAssignmentBtn');
+    const helpInfo = document.getElementById('helpInfo');
+    
+    if (!selectedGrade) {
+        document.getElementById('assignmentsContent').innerHTML = `
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-graduation-cap fa-4x mb-3" style="opacity: 0.3;"></i><br>
+                <h6>Seleccione un grado para comenzar</h6>
+                <p class="text-sm">Las materias asignadas aparecerán aquí</p>
+            </div>
+        `;
+        addBtn.disabled = true;
+        helpInfo.style.display = 'block';
+        return;
+    }
+    
+    // Ocultar ayuda y habilitar botón
+    addBtn.disabled = false;
+    helpInfo.style.display = 'none';
+    
+    // Mostrar loading
+    document.getElementById('assignmentsContent').innerHTML = `
+        <div class="text-center text-muted py-4">
+            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>
+            <h6 class="mt-2">Cargando asignaciones del grado seleccionado...</h6>
+        </div>
+    `;
+    
+    console.log(`📚 Cargando asignaciones para grado ID: ${selectedGrade}`);
+    
+    fetch(`/academic-system/api/grades/${selectedGrade}/assignments/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log(`✅ ${data.data.total_subjects} asignaciones encontradas`);
+                displayAssignments(data.data);
+            } else {
+                console.error('❌ Error al cargar asignaciones:', data.message);
+                showNotification('Error al cargar asignaciones: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error de red:', error);
+            showNotification('Error al cargar asignaciones', 'error');
+        });
+}
+
+function displayAssignments(data) {
+    console.log('📊 Mostrando asignaciones:', data);
+    const content = document.getElementById('assignmentsContent');
+    
+    // Guardar datos en variable global para edición
+    currentAssignments = data.assignments || [];
+    
+    if (data.assignments.length === 0) {
+        content.innerHTML = `
+            <div class="text-center py-5">
+                <div class="text-muted mb-4">
+                    <i class="fas fa-inbox fa-4x" style="opacity: 0.3;"></i>
+                </div>
+                <h5 class="text-muted">No hay materias asignadas</h5>
+                <p class="text-muted">Este grado no tiene materias asignadas aún.</p>
+                <button class="btn btn-primary mt-3" onclick="openAssignmentModal()">
+                    <i class="fas fa-plus me-1"></i>Asignar Primera Materia
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Mostrar estadísticas
+    let html = `
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-book fa-2x mb-2"></i>
+                        <h5>${data.total_subjects}</h5>
+                        <small>Materias Asignadas</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
+                        <h5>${data.total_hours}</h5>
+                        <small>Horas por Semana</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-layer-group fa-2x mb-2"></i>
+                        <h5>${data.grade.name}</h5>
+                        <small>Grado Seleccionado</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Mostrar tabla de asignaciones
+    html += `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Materia</th>
+                        <th>Código</th>
+                        <th>Área</th>
+                        <th>Horas/Sem</th>
+                        <th>Período</th>
+                        <th>Tipo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    data.assignments.forEach(assignment => {
+        const badgeType = assignment.is_mandatory ? 'bg-danger' : 'bg-secondary';
+        const typeText = assignment.is_mandatory ? 'Obligatoria' : 'Opcional';
+        
+        html += `
+            <tr>
+                <td>
+                    <strong>${assignment.subject_name}</strong>
+                </td>
+                <td>
+                    <code>${assignment.subject_code}</code>
+                </td>
+                <td>
+                    <span class="badge bg-primary">${assignment.subject_area_display}</span>
+                </td>
+                <td>
+                    <span class="badge bg-success">${assignment.hours_per_week}h</span>
+                </td>
+                <td>
+                    ${assignment.semester_display}
+                </td>
+                <td>
+                    <span class="badge ${badgeType}">${typeText}</span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editAssignment(${assignment.id})" 
+                            title="Editar asignación">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteAssignment(${assignment.id})" 
+                            title="Eliminar asignación">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    content.innerHTML = html;
+}
+
+function openAssignmentModal() {
+    const gradeSelect = document.getElementById('gradeSelect');
+    const selectedGrade = gradeSelect.value;
+    
+    if (!selectedGrade) {
+        showNotification('Seleccione un grado primero', 'warning');
+        return;
+    }
+    
+    // Limpiar formulario
+    document.getElementById('assignmentForm').reset();
+    document.getElementById('assignmentId').value = '';
+    document.getElementById('assignmentModalLabel').textContent = 'Asignar Materia a Grado';
+    
+    // Cargar grados en el modal
+    loadGradesForAssignment();
+    
+    // Preseleccionar el grado actual
+    document.getElementById('assignmentGrade').value = selectedGrade;
+    
+    // Cargar materias disponibles para este grado
+    loadAvailableSubjects(selectedGrade);
+    
+    const modal = new bootstrap.Modal(document.getElementById('assignmentModal'));
+    modal.show();
+}
+
+function refreshAssignments() {
+    console.log('=== REFRESCANDO ASIGNACIONES ===');
+    loadGradesForAssignment();
+    loadAssignments();
+    showNotification('Datos actualizados', 'success');
+}
+
+function loadGradesForAssignment() {
+    console.log('=== CARGANDO GRADOS PARA ASIGNACIONES ===');
+    
+    const mainSelect = document.getElementById('gradeSelect');
+    if (!mainSelect) return;
+    
+    // Mostrar loading en el selector
+    mainSelect.innerHTML = '<option value="">⏳ Cargando grados...</option>';
+    
+    fetch('/academic-system/api/grades/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log(`✅ ${data.data.length} grados cargados`);
+                
+                // Actualizar selector del modal
+                const modalSelect = document.getElementById('assignmentGrade');
+                if (modalSelect) {
+                    modalSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
+                    data.data.forEach(grade => {
+                        modalSelect.innerHTML += `<option value="${grade.id}">${grade.name}</option>`;
+                    });
+                }
+                
+                // Actualizar selector principal
+                mainSelect.innerHTML = '<option value="">🔍 Seleccionar Grado...</option>';
+                data.data.forEach(grade => {
+                    mainSelect.innerHTML += `<option value="${grade.id}">${grade.name} (${grade.level})</option>`;
+                });
+                
+                console.log('✅ Selectores de grados actualizados');
+            } else {
+                console.error('❌ Error al cargar grados:', data.message);
+                mainSelect.innerHTML = '<option value="">❌ Error al cargar grados</option>';
+                showNotification('Error al cargar grados: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error de red:', error);
+            mainSelect.innerHTML = '<option value="">❌ Error de conexión</option>';
+            showNotification('Error de conexión al cargar grados', 'error');
+        });
+}
+
+function loadAvailableSubjects(gradeId) {
+    const subjectSelect = document.getElementById('assignmentSubject');
+    
+    if (!gradeId) {
+        subjectSelect.innerHTML = '<option value="">Primero seleccione un grado...</option>';
+        return Promise.resolve();
+    }
+    
+    subjectSelect.innerHTML = '<option value="">Cargando materias...</option>';
+    
+    return fetch(`/academic-system/api/grades/${gradeId}/available-subjects/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                subjectSelect.innerHTML = '<option value="">Seleccionar materia...</option>';
+                
+                data.data.available_subjects.forEach(subject => {
+                    subjectSelect.innerHTML += `
+                        <option value="${subject.id}" data-hours="${subject.hours_per_week}">
+                            ${subject.name} (${subject.code}) - ${subject.area_display}
+                        </option>
+                    `;
+                });
+                
+                if (data.data.available_subjects.length === 0) {
+                    subjectSelect.innerHTML = '<option value="">No hay materias disponibles</option>';
+                }
+                return data;
+            } else {
+                subjectSelect.innerHTML = '<option value="">Error al cargar materias</option>';
+                throw new Error(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            subjectSelect.innerHTML = '<option value="">Error al cargar materias</option>';
+            throw error;
+        });
+}
+
+function autoFillHours(selectElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const hours = selectedOption.getAttribute('data-hours');
+    
+    if (hours) {
+        document.getElementById('assignmentHours').value = hours;
+    }
+}
+
+function saveAssignment(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const assignmentId = formData.get('id');
+    const isEdit = assignmentId && assignmentId !== '';
+    
+    const url = isEdit ? 
+        `/academic-system/api/assignments/${assignmentId}/update/` : 
+        `/academic-system/api/assignments/create/`;
+    
+    const data = {
+        grade_id: parseInt(formData.get('grade_id')),
+        subject_id: parseInt(formData.get('subject_id')),
+        hours_per_week: parseInt(formData.get('hours_per_week')),
+        semester: formData.get('semester'),
+        is_mandatory: formData.get('is_mandatory') === 'on'
+    };
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification(data.message, 'success');
+            
+            // Cerrar modal y recargar asignaciones
+            bootstrap.Modal.getInstance(document.getElementById('assignmentModal')).hide();
+            loadAssignments();
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error al guardar la asignación', 'error');
+    });
+}
+
+function editAssignment(id) {
+    console.log('=== EDITANDO ASIGNACIÓN ===', id);
+    
+    // Buscar la asignación en los datos cargados
+    let assignment = null;
+    if (window.currentAssignments) {
+        assignment = window.currentAssignments.find(a => a.id === id);
+    }
+    
+    if (!assignment) {
+        showNotification('Error: No se encontró la asignación', 'error');
+        return;
+    }
+    
+    // Llenar el formulario con los datos de la asignación
+    document.getElementById('assignmentId').value = assignment.id;
+    
+    // Obtener el grade_id del grado seleccionado actualmente
+    const currentGradeId = document.getElementById('gradeSelect').value;
+    document.getElementById('assignmentGrade').value = currentGradeId;
+    
+    // Cargar las materias disponibles para el grado
+    loadAvailableSubjects(currentGradeId).then(() => {
+        document.getElementById('assignmentSubject').value = assignment.subject_id;
+        autoFillHours(document.getElementById('assignmentSubject'));
+    });
+    
+    document.getElementById('assignmentHours').value = assignment.hours_per_week;
+    document.getElementById('assignmentSemester').value = assignment.semester;
+    document.getElementById('assignmentMandatory').checked = assignment.is_mandatory;
+    
+    // Cambiar el título del modal
+    document.getElementById('assignmentModalLabel').innerHTML = 
+        '<i class="fas fa-edit me-2"></i>Editar Asignación';
+    
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById('assignmentModal'));
+    modal.show();
+}
+
+function deleteAssignment(id) {
+    if (confirm('¿Está seguro de que desea eliminar esta asignación?\n\nEsta acción no se puede deshacer.')) {
+        fetch(`/academic-system/api/assignments/${id}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showNotification(data.message, 'success');
+                loadAssignments(); // Recargar la lista
+            } else {
+                showNotification('Error: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al eliminar la asignación', 'error');
+        });
+    }
+}
+
+// ================== Funciones de Acceso Rápido ==================
+
+function manageGrades() {
+    document.getElementById('grades-tab').click();
+}
+
+function manageSubjects() {
+    document.getElementById('subjects-tab').click();
+}
+
+function manageAssignments() {
+    document.getElementById('assignments-tab').click();
+}
+
+function manageSchedules() {
+    window.open('/academic-system/schedules/', '_blank');
+}
+
+function viewReports() {
+    showNotification('Reportes - Por implementar', 'info');
+}
+
+// ================== Funciones de Utilidades ==================
+
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+// ================== Funciones de Notificaciones ==================
+
+function showNotification(message, type = 'info') {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${getAlertClass(type)} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    
+    notification.innerHTML = `
+        <i class="fas fa-${getAlertIcon(type)} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Agregar al DOM
+    document.body.appendChild(notification);
+    
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+function getAlertClass(type) {
+    const classes = {
+        'success': 'success',
+        'error': 'danger',
+        'warning': 'warning',
+        'info': 'info'
+    };
+    return classes[type] || 'info';
+}
+
+function getAlertIcon(type) {
+    const icons = {
+        'success': 'check-circle',
+        'error': 'exclamation-triangle',
+        'warning': 'exclamation-circle',
+        'info': 'info-circle'
+    };
+    return icons[type] || 'info-circle';
+}
+
+function showAlert(type, message) {
+    showNotification(message, type);
+}
+
+// ================== Funciones para Inscripciones ==================
+
+// Variables globales para inscripciones
+let studentsData = [];
+let coursesData = [];
+let filteredStudents = [];
+let currentStudentId = null;
+
+// Variables globales para asignaciones
+let currentAssignments = [];
+
+// Cargar datos cuando se active la pestaña de inscripciones
+document.addEventListener('DOMContentLoaded', function() {
+    const enrollmentsTab = document.getElementById('enrollments-tab');
+    if (enrollmentsTab) {
+        enrollmentsTab.addEventListener('shown.bs.tab', function() {
+            console.log('=== PESTAÑA INSCRIPCIONES ACTIVADA ===');
+            loadStudentsData();
+            loadCoursesForFilter();
+        });
+    }
+});
+
+function loadStudentsData() {
+    console.log('=== CARGANDO ESTUDIANTES ===');
+    
+    fetch('/academic-system/api/students/')
+        .then(response => {
+            console.log('Status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Respuesta estudiantes:', data);
+            if (data.status === 'success') {
+                studentsData = data.data || [];
+                filteredStudents = [...studentsData];
+                displayStudents(filteredStudents);
+                updateStudentStatistics();
+            } else {
+                showAlert('error', 'Error al cargar estudiantes: ' + data.message);
+                document.getElementById('studentsTableContainer').innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-exclamation-circle fa-4x mb-3" style="opacity: 0.3;"></i><br>
+                        <h6>Error al cargar estudiantes</h6>
+                        <p>${data.message}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error de conexión al cargar estudiantes');
+            document.getElementById('studentsTableContainer').innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-wifi fa-4x mb-3" style="opacity: 0.3;"></i><br>
+                    <h6>Error de conexión</h6>
+                    <p>No se pudo conectar con el servidor</p>
+                </div>
+            `;
+        });
+}
+
+function loadCoursesForFilter() {
+    console.log('=== CARGANDO CURSOS PARA FILTRO ===');
+    
+    fetch('/academic-system/api/courses/')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respuesta cursos:', data);
+            if (data.status === 'success') {
+                coursesData = data.data || [];
+                populateCourseFilter();
+                populateCoursesInModal();
+            } else {
+                console.error('Error al cargar cursos:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+function populateCourseFilter() {
+    const filterSelect = document.getElementById('filterCourse');
+    if (!filterSelect) return;
+    
+    filterSelect.innerHTML = '<option value="">Todos los cursos</option>';
+    
+    coursesData.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.id;
+        option.textContent = `${course.grade_name} - Sección ${course.section}`;
+        filterSelect.appendChild(option);
+    });
+}
+
+function populateCoursesInModal() {
+    const studentCourseSelect = document.getElementById('studentCourse');
+    if (!studentCourseSelect) return;
+    
+    studentCourseSelect.innerHTML = '<option value="">Seleccionar curso...</option>';
+    
+    coursesData.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.id;
+        option.textContent = `${course.grade_name} - Sección ${course.section}`;
+        studentCourseSelect.appendChild(option);
+    });
+}
+
+function displayStudents(students) {
+    const container = document.getElementById('studentsTableContainer');
+    
+    if (!students || students.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-user-graduate fa-4x mb-3" style="opacity: 0.3;"></i><br>
+                <h6>No hay estudiantes registrados</h6>
+                <p>Haga clic en "Nuevo Estudiante" para agregar el primer estudiante</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let tableHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th><i class="fas fa-barcode me-1"></i>Código</th>
+                        <th><i class="fas fa-user me-1"></i>Estudiante</th>
+                        <th><i class="fas fa-book me-1"></i>Curso</th>
+                        <th><i class="fas fa-calendar me-1"></i>Edad</th>
+                        <th><i class="fas fa-phone me-1"></i>Contacto</th>
+                        <th><i class="fas fa-cogs me-1"></i>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    students.forEach(student => {
+        const courseName = student.course_name ? `${student.course_name}` : 
+                          '<span class="text-muted">Sin curso asignado</span>';
+        const age = student.age || 'N/A';
+        const phone = student.phone || 'N/A';
+        
+        tableHTML += `
+            <tr>
+                <td><span class="badge bg-primary">${student.student_id}</span></td>
+                <td>
+                    <div>
+                        <strong>${student.first_name} ${student.last_name}</strong><br>
+                        <small class="text-muted">${student.email}</small>
+                    </div>
+                </td>
+                <td>${courseName}</td>
+                <td>${age} años</td>
+                <td>${phone}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-info" onclick="viewStudent(${student.id})" 
+                                title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="editStudent(${student.id})" 
+                                title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-success" onclick="manageEnrollment(${student.id})" 
+                                title="Gestionar inscripción">
+                            <i class="fas fa-user-plus"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deleteStudent(${student.id})" 
+                                title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = tableHTML;
+}
+
+function updateStudentStatistics() {
+    const totalCount = studentsData.length;
+    const enrolledCount = studentsData.filter(student => student.course_id).length;
+    
+    document.getElementById('totalStudentsCount').textContent = `${totalCount} estudiantes`;
+    document.getElementById('enrolledStudentsCount').textContent = `${enrolledCount} inscritos`;
+}
+
+function filterStudentsByCourse() {
+    const courseId = document.getElementById('filterCourse').value;
+    const searchTerm = document.getElementById('searchStudent').value.toLowerCase();
+    
+    filteredStudents = studentsData.filter(student => {
+        const matchesCourse = !courseId || student.course_id == courseId;
+        const matchesSearch = !searchTerm || 
+            student.first_name.toLowerCase().includes(searchTerm) ||
+            student.last_name.toLowerCase().includes(searchTerm) ||
+            student.student_id.toLowerCase().includes(searchTerm) ||
+            student.email.toLowerCase().includes(searchTerm);
+        
+        return matchesCourse && matchesSearch;
+    });
+    
+    displayStudents(filteredStudents);
+}
+
+function searchStudents() {
+    filterStudentsByCourse(); // Reutiliza la misma lógica de filtrado
+}
+
+function createStudent() {
+    console.log('=== CREAR NUEVO ESTUDIANTE ===');
+    
+    // Limpiar formulario
+    document.getElementById('studentForm').reset();
+    document.getElementById('studentId').value = '';
+    document.getElementById('studentModalLabel').innerHTML = '<i class="fas fa-user-graduate me-2"></i>Nuevo Estudiante';
+    
+    // Establecer fecha actual para la inscripción
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('enrollmentDate').value = today;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('studentModal'));
+    modal.show();
+}
+
+function editStudent(studentId) {
+    console.log('=== EDITAR ESTUDIANTE ===', studentId);
+    
+    const student = studentsData.find(s => s.id === studentId);
+    if (!student) {
+        showAlert('error', 'Estudiante no encontrado');
+        return;
+    }
+    
+    // Llenar formulario con datos del estudiante
+    document.getElementById('studentId').value = student.id;
+    document.getElementById('studentCode').value = student.student_id || '';
+    document.getElementById('firstName').value = student.first_name || '';
+    document.getElementById('lastName').value = student.last_name || '';
+    document.getElementById('email').value = student.email || '';
+    document.getElementById('phone').value = student.phone || '';
+    document.getElementById('birthDate').value = student.birth_date || '';
+    document.getElementById('studentCourse').value = student.course_id || '';
+    document.getElementById('enrollmentDate').value = student.enrollment_date || '';
+    document.getElementById('guardianName').value = student.guardian_name || '';
+    document.getElementById('guardianPhone').value = student.guardian_phone || '';
+    document.getElementById('address').value = student.address || '';
+    
+    document.getElementById('studentModalLabel').innerHTML = '<i class="fas fa-user-graduate me-2"></i>Editar Estudiante';
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('studentModal'));
+    modal.show();
+}
+
+function saveStudent(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const studentData = Object.fromEntries(formData.entries());
+    const studentId = studentData.id;
+    
+    console.log('=== GUARDANDO ESTUDIANTE ===', studentData);
+    
+    const url = studentId ? 
+        `/academic-system/api/students/${studentId}/` : 
+        '/academic-system/api/students/create/';
+    
+    const method = studentId ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify(studentData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Respuesta:', data);
+        if (data.status === 'success') {
+            showAlert('success', studentId ? 'Estudiante actualizado correctamente' : 'Estudiante creado correctamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('studentModal'));
+            modal.hide();
+            
+            // Recargar datos
+            loadStudentsData();
+        } else {
+            showAlert('error', 'Error al guardar estudiante: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Error de conexión al guardar estudiante');
+    });
+}
+
+function manageEnrollment(studentId) {
+    console.log('=== GESTIONAR INSCRIPCIÓN ===', studentId);
+    
+    currentStudentId = studentId;
+    const student = studentsData.find(s => s.id === studentId);
+    
+    if (!student) {
+        showAlert('error', 'Estudiante no encontrado');
+        return;
+    }
+    
+    // Actualizar información del estudiante en el modal
+    document.getElementById('enrollmentStudentName').textContent = 
+        `${student.first_name} ${student.last_name} (${student.student_id})`;
+    
+    // Cargar cursos disponibles
+    loadAvailableCoursesForEnrollment(studentId);
+    
+    // Mostrar/ocultar botones según estado actual
+    const enrollBtn = document.querySelector('button[onclick="processEnrollment()"]');
+    const unenrollBtn = document.querySelector('button[onclick="processUnenrollment()"]');
+    
+    if (student.course_id) {
+        enrollBtn.style.display = 'none';
+        unenrollBtn.style.display = 'inline-block';
+        document.getElementById('enrollmentModalLabel').innerHTML = 
+            '<i class="fas fa-user-minus me-2"></i>Gestionar Inscripción - Estudiante Inscrito';
+    } else {
+        enrollBtn.style.display = 'inline-block';
+        unenrollBtn.style.display = 'none';
+        document.getElementById('enrollmentModalLabel').innerHTML = 
+            '<i class="fas fa-user-plus me-2"></i>Inscribir Estudiante';
+    }
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('enrollmentModal'));
+    modal.show();
+}
+
+function loadAvailableCoursesForEnrollment(studentId) {
+    fetch(`/academic-system/api/courses/availability/?student_id=${studentId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Cursos disponibles:', data);
+            
+            const select = document.getElementById('availableCourses');
+            select.innerHTML = '<option value="">Seleccionar curso...</option>';
+            
+            if (data.status === 'success' && data.data) {
+                data.data.forEach(course => {
+                    const option = document.createElement('option');
+                    option.value = course.id;
+                    option.textContent = `${course.grade_name} - Sección ${course.section} (${course.available_spots} cupos)`;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('availableCourses').innerHTML = 
+                '<option value="">Error al cargar cursos</option>';
+        });
+}
+
+function processEnrollment() {
+    const courseId = document.getElementById('availableCourses').value;
+    const notes = document.getElementById('enrollmentNotes').value;
+    
+    if (!courseId) {
+        showAlert('warning', 'Por favor seleccione un curso');
+        return;
+    }
+    
+    console.log('=== PROCESANDO INSCRIPCIÓN ===', {
+        student_id: currentStudentId,
+        course_id: courseId,
+        notes: notes
+    });
+    
+    fetch('/academic-system/api/enrollments/enroll/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            student_id: currentStudentId,
+            course_id: courseId,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Respuesta inscripción:', data);
+        if (data.status === 'success') {
+            showAlert('success', 'Estudiante inscrito correctamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('enrollmentModal'));
+            modal.hide();
+            
+            // Recargar datos
+            loadStudentsData();
+        } else {
+            showAlert('error', 'Error al inscribir estudiante: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Error de conexión al procesar inscripción');
+    });
+}
+
+function processUnenrollment() {
+    if (!currentStudentId) {
+        showAlert('error', 'ID de estudiante no válido');
+        return;
+    }
+    
+    if (!confirm('¿Está seguro de retirar al estudiante del curso actual?')) {
+        return;
+    }
+    
+    console.log('=== PROCESANDO RETIRO ===', currentStudentId);
+    
+    fetch('/academic-system/api/enrollments/unenroll/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            student_id: currentStudentId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Respuesta retiro:', data);
+        if (data.status === 'success') {
+            showAlert('success', 'Estudiante retirado del curso correctamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('enrollmentModal'));
+            modal.hide();
+            
+            // Recargar datos
+            loadStudentsData();
+        } else {
+            showAlert('error', 'Error al retirar estudiante: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Error de conexión al procesar retiro');
+    });
+}
+
+function viewStudent(studentId) {
+    const student = studentsData.find(s => s.id === studentId);
+    if (!student) {
+        showAlert('error', 'Estudiante no encontrado');
+        return;
+    }
+    
+    // Crear modal de información (simplificado por ahora)
+    alert(`Información del Estudiante:
+    
+Código: ${student.student_id}
+Nombre: ${student.first_name} ${student.last_name}
+Email: ${student.email}
+Teléfono: ${student.phone || 'N/A'}
+Curso: ${student.course_name || 'Sin curso asignado'}
+Edad: ${student.age || 'N/A'} años
+Acudiente: ${student.guardian_name || 'N/A'}
+Teléfono Acudiente: ${student.guardian_phone || 'N/A'}`);
+}
+
+function deleteStudent(studentId) {
+    const student = studentsData.find(s => s.id === studentId);
+    if (!student) {
+        showAlert('error', 'Estudiante no encontrado');
+        return;
+    }
+    
+    if (!confirm(`¿Está seguro de eliminar al estudiante ${student.first_name} ${student.last_name}?`)) {
+        return;
+    }
+    
+    console.log('=== ELIMINANDO ESTUDIANTE ===', studentId);
+    
+    fetch(`/academic-system/api/students/${studentId}/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Respuesta eliminación:', data);
+        if (data.status === 'success') {
+            showAlert('success', 'Estudiante eliminado correctamente');
+            loadStudentsData();
+        } else {
+            showAlert('error', 'Error al eliminar estudiante: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Error de conexión al eliminar estudiante');
+    });
+}
+
+</script>
+
+<style>
+.border-left-primary { border-left: 0.25rem solid #4e73df !important; }
+.border-left-success { border-left: 0.25rem solid #1cc88a !important; }
+.border-left-info { border-left: 0.25rem solid #36b9cc !important; }
+.border-left-warning { border-left: 0.25rem solid #f6c23e !important; }
+.border-left-secondary { border-left: 0.25rem solid #858796 !important; }
+.border-left-dark { border-left: 0.25rem solid #5a5c69 !important; }
+</style>
+{% endblock %}

@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Crear Usuario - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .create-user-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    
+    .create-user-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        overflow: hidden;
+        width: 100%;
+        max-width: 600px;
+    }
+    
+    .create-user-header {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+        position: relative;
+    }
+    
+    .create-user-icon {
+        width: 70px;
+        height: 70px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+    }
+    
+    .create-user-body {
+        padding: 40px;
+    }
+    
+    .form-floating {
+        margin-bottom: 20px;
+    }
+    
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(231, 76, 60, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        background: rgba(255, 255, 255, 1);
+        border-color: #e74c3c;
+        box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25);
+    }
+    
+    .btn-create {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 15px 30px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(231, 76, 60, 0.3);
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    }
+    
+    .alert {
+        border-radius: 10px;
+        border: none;
+        margin-bottom: 20px;
+    }
+    
+    .breadcrumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+    }
+    
+    .breadcrumb-item a {
+        color: white;
+        text-decoration: none;
+    }
+    
+    .breadcrumb-item.active {
+        color: rgba(255, 255, 255, 0.8);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-user-container">
+    <div class="container">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'projects:dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'authentication:user_list' %}">Usuarios</a></li>
+                <li class="breadcrumb-item active">Crear Usuario</li>
+            </ol>
+        </nav>
+
+        <div class="create-user-card">
+            <div class="create-user-header">
+                <div class="create-user-icon">
+                    <i class="bi bi-person-plus-fill" style="font-size: 2rem;"></i>
+                </div>
+                <h2 class="mb-0">Crear Nuevo Usuario</h2>
+                <p class="mb-0 opacity-75">Panel de Administración</p>
+            </div>
+            
+            <div class="create-user-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.username }}
+                                <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                                {% if form.username.errors %}
+                                    <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.email }}
+                                <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                                {% if form.email.errors %}
+                                    <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.first_name }}
+                                <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.last_name }}
+                                <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating">
+                        {{ form.role }}
+                        <label for="{{ form.role.id_for_label }}">{{ form.role.label }}</label>
+                        {% if form.role.errors %}
+                            <div class="text-danger small mt-1">{{ form.role.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.password1 }}
+                                <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+                                {% if form.password1.errors %}
+                                    <div class="text-danger small mt-1">{{ form.password1.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.password2 }}
+                                <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+                                {% if form.password2.errors %}
+                                    <div class="text-danger small mt-1">{{ form.password2.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-create">
+                            <i class="bi bi-person-check me-2"></i>Crear Usuario
+                        </button>
+                        <a href="{% url 'authentication:user_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Volver a Lista
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mis Estudiantes - Sistema Académico{% endblock %}
+
+{% block extra_css %}
+<style>
+    .student-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background: white;
+        transition: all 0.3s ease;
+    }
+    
+    .student-card:hover {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .student-name {
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .course-badge {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+    }
+    
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+    }
+    
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .stats-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-users text-success"></i> Mis Estudiantes</h2>
+                    <p class="text-muted">Estudiantes de los cursos donde tienes asignaciones</p>
+                </div>
+                <a href="{% url 'academics_extended:dashboard' %}" class="btn btn-outline-success">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </a>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="stats-section">
+                <div class="row text-center">
+                    <div class="col-md-6">
+                        <h4 class="text-success">{{ students|length }}</h4>
+                        <p class="mb-0">Total Estudiantes</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h4 class="text-primary">
+                            {% regroup students by course as courses_list %}
+                            {{ courses_list|length }}
+                        </h4>
+                        <p class="mb-0">Cursos</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if students %}
+                <!-- Lista de estudiantes agrupada por curso -->
+                {% regroup students by course as students_by_course %}
+                {% for course_group in students_by_course %}
+                    <div class="mb-4">
+                        <h4 class="mb-3">
+                            <span class="course-badge">{{ course_group.grouper.grade.name }} - {{ course_group.grouper.section }}</span>
+                            <small class="text-muted">({{ course_group.list|length }} estudiantes)</small>
+                        </h4>
+                        
+                        <div class="row">
+                            {% for student in course_group.list %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="student-card">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="student-name">
+                                                {{ student.user.get_full_name }}
+                                            </div>
+                                            <small class="text-muted">ID: {{ student.student_id }}</small>
+                                        </div>
+                                        <span class="status-badge status-{{ student.status }}">
+                                            {{ student.get_status_display }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar"></i> 
+                                            Matrícula: {{ student.enrollment_date|date:"d/m/Y" }}
+                                        </small>
+                                    </div>
+                                    
+                                    {% if student.guardian_name %}
+                                    <div class="mt-1">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user-friends"></i> 
+                                            {{ student.guardian_name }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="mt-3 text-center">
+                                        <a href="{% url 'academics_extended:quick_grade_entry' course_group.grouper.id 1 %}" 
+                                           class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-edit"></i> Calificar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    No tienes estudiantes asignados actualmente.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

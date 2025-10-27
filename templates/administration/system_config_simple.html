@@ -1,0 +1,625 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuración Académica - Administración{% endblock %}
+
+{% load static %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="card-title mb-0">
+                                <i class="fas fa-graduation-cap me-2"></i>
+                                Configuración Académica
+                            </h1>
+                            <p class="card-text mb-0">
+                                Gestión de estructura académica: grados y materias
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'administration:dashboard' %}" class="btn btn-light">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Volver al Panel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Académicas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Grados</div>
+                            <div class="h5 mb-0">{{ total_models.grades }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-layer-group fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Materias</div>
+                            <div class="h5 mb-0">{{ total_models.subjects }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Años Académicos</div>
+                            <div class="h5 mb-0">{{ total_models.academic_years }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-secondary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Usuarios</div>
+                            <div class="h5 mb-0">{{ total_models.users }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Panel Principal -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <ul class="nav nav-tabs card-header-tabs" id="academicTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="grades-tab" data-bs-toggle="tab" data-bs-target="#grades"
+                                    type="button" role="tab" aria-controls="grades" aria-selected="true">
+                                <i class="fas fa-layer-group me-1"></i>Grados
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="subjects-tab" data-bs-toggle="tab" data-bs-target="#subjects"
+                                    type="button" role="tab" aria-controls="subjects" aria-selected="false">
+                                <i class="fas fa-book me-1"></i>Materias
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="academicTabsContent">
+                        <!-- Tab de Grados -->
+                        <div class="tab-pane fade show active" id="grades" role="tabpanel" aria-labelledby="grades-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Gestión de Grados</h5>
+                                <button class="btn btn-primary" onclick="createGrade()">
+                                    <i class="fas fa-plus me-1"></i>Nuevo Grado
+                                </button>
+                            </div>
+                            <div id="gradesContent">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin fa-2x"></i><br>
+                                    Cargando grados...
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab de Materias -->
+                        <div class="tab-pane fade" id="subjects" role="tabpanel" aria-labelledby="subjects-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Gestión de Materias</h5>
+                                <button class="btn btn-success" onclick="createSubject()">
+                                    <i class="fas fa-plus me-1"></i>Nueva Materia
+                                </button>
+                            </div>
+                            <div id="subjectsContent">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin fa-2x"></i><br>
+                                    Cargando materias...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Acciones -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tools me-2"></i>
+                        Herramientas del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="manageGrades()">
+                            <i class="fas fa-layer-group me-2"></i>
+                            Gestionar Grados
+                        </button>
+                        <button class="btn btn-success" onclick="manageSubjects()">
+                            <i class="fas fa-book me-2"></i>
+                            Gestionar Materias
+                        </button>
+                        <button class="btn btn-warning" onclick="manageSchedules()">
+                            <i class="fas fa-clock me-2"></i>
+                            Sistema de Horarios
+                        </button>
+                        <hr>
+                        <button class="btn btn-outline-secondary" onclick="viewReports()">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Ver Reportes
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información del Sistema -->
+            <div class="card mt-3">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Estado del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Configuración:</strong><br>
+                        {% if current_academic_year %}
+                            <span class="badge bg-success">Año académico configurado</span>
+                        {% else %}
+                            <span class="badge bg-warning">Sin año académico</span>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Estructura:</strong><br>
+                        {% if total_models.grades > 0 %}
+                            {{ total_models.grades }} grados configurados
+                        {% else %}
+                            <span class="text-muted">No hay grados configurados</span>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Materias:</strong><br>
+                        {% if total_models.subjects > 0 %}
+                            {{ total_models.subjects }} materias configuradas
+                        {% else %}
+                            <span class="text-muted">No hay materias configuradas</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ================== Inicialización ==================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== SISTEMA ACADÉMICO INICIADO ===');
+    
+    // Cargar datos iniciales
+    loadGrades();
+    loadSubjects();
+    
+    // Configurar eventos de pestañas
+    document.getElementById('grades-tab').addEventListener('shown.bs.tab', function() {
+        loadGrades();
+    });
+    
+    document.getElementById('subjects-tab').addEventListener('shown.bs.tab', function() {
+        loadSubjects();
+    });
+});
+
+// ================== Funciones para Grados ==================
+
+function loadGrades() {
+    console.log('=== CARGANDO GRADOS ===');
+    
+    fetch('/academics_extended/api/grades/')
+        .then(response => {
+            console.log('Status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Respuesta:', data);
+            if (data.status === 'success') {
+                displayGrades(data.grades);
+            } else {
+                showAlert('error', 'Error al cargar grados: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error de conexión al cargar grados');
+        });
+}
+
+function displayGrades(grades) {
+    const content = document.getElementById('gradesContent');
+    if (!content) {
+        console.error('No se encontró el contenedor gradesContent');
+        return;
+    }
+    
+    if (grades.length === 0) {
+        content.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-layer-group fa-3x mb-3"></i>
+                <h5>No hay grados configurados</h5>
+                <p>Comience creando el primer grado del sistema</p>
+                <button class="btn btn-primary" onclick="createGrade()">
+                    <i class="fas fa-plus me-1"></i>Crear Primer Grado
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Agrupar grados por nivel
+    const primaryGrades = grades.filter(g => g.level === 'primaria');
+    const secondaryGrades = grades.filter(g => g.level === 'bachillerato');
+    
+    let html = '';
+    
+    if (primaryGrades.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-primary border-bottom pb-2">
+                    <i class="fas fa-graduation-cap me-1"></i>Educación Primaria
+                </h6>
+                <div class="row">
+        `;
+        
+        primaryGrades.forEach(grade => {
+            html += createGradeCardHTML(grade);
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    if (secondaryGrades.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-info border-bottom pb-2">
+                    <i class="fas fa-university me-1"></i>Educación Secundaria
+                </h6>
+                <div class="row">
+        `;
+        
+        secondaryGrades.forEach(grade => {
+            html += createGradeCardHTML(grade);
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    content.innerHTML = html;
+}
+
+function createGradeCardHTML(grade) {
+    return `
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 border-start border-primary border-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">${grade.name}</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                    type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="editGrade(${grade.id})">
+                                    <i class="fas fa-edit me-1"></i>Editar
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteGrade(${grade.id})">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="card-text small text-muted mb-2">${grade.description || 'Sin descripción'}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-${grade.level === 'primaria' ? 'primary' : 'info'}">
+                            ${grade.level === 'primaria' ? 'Primaria' : 'Secundaria'}
+                        </span>
+                        <small class="text-muted">Grado ${grade.grade_number}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createGrade() {
+    showNotification('Modal de crear grado - Por implementar', 'info');
+}
+
+function editGrade(id) {
+    showNotification('Modal de editar grado - Por implementar', 'info');
+}
+
+function deleteGrade(id) {
+    if (confirm('¿Está seguro de que desea eliminar este grado?')) {
+        showNotification('Eliminar grado - Por implementar', 'warning');
+    }
+}
+
+// ================== Funciones para Materias ==================
+
+function loadSubjects() {
+    console.log('=== CARGANDO MATERIAS ===');
+    
+    fetch('/academics_extended/api/subjects/')
+        .then(response => {
+            console.log('Status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Respuesta:', data);
+            if (data.status === 'success') {
+                displaySubjects(data.subjects);
+            } else {
+                showAlert('error', 'Error al cargar materias: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error de conexión al cargar materias');
+        });
+}
+
+function displaySubjects(subjects) {
+    const content = document.getElementById('subjectsContent');
+    if (!content) {
+        console.error('No se encontró el contenedor subjectsContent');
+        return;
+    }
+    
+    if (subjects.length === 0) {
+        content.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-book fa-3x mb-3"></i>
+                <h5>No hay materias configuradas</h5>
+                <p>Comience creando la primera materia del sistema</p>
+                <button class="btn btn-success" onclick="createSubject()">
+                    <i class="fas fa-plus me-1"></i>Crear Primera Materia
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Agrupar materias por área
+    const subjectsByArea = {};
+    subjects.forEach(subject => {
+        const area = subject.area || 'otras';
+        if (!subjectsByArea[area]) {
+            subjectsByArea[area] = [];
+        }
+        subjectsByArea[area].push(subject);
+    });
+    
+    // Definir colores y nombres de áreas
+    const areaConfig = {
+        'matematicas': { name: 'Matemáticas', color: 'primary', icon: 'calculator' },
+        'ciencias': { name: 'Ciencias', color: 'success', icon: 'atom' },
+        'lenguaje': { name: 'Lenguaje', color: 'info', icon: 'pen-fancy' },
+        'sociales': { name: 'Ciencias Sociales', color: 'warning', icon: 'globe' },
+        'artes': { name: 'Artes', color: 'danger', icon: 'palette' },
+        'ingles': { name: 'Inglés', color: 'secondary', icon: 'language' },
+        'educacion_fisica': { name: 'Educación Física', color: 'dark', icon: 'running' },
+        'informatica': { name: 'Informática', color: 'primary', icon: 'laptop-code' },
+        'religion': { name: 'Religión', color: 'light', icon: 'cross' },
+        'etica': { name: 'Ética', color: 'secondary', icon: 'balance-scale' },
+        'otras': { name: 'Otras Materias', color: 'muted', icon: 'book' }
+    };
+    
+    let html = '';
+    
+    Object.keys(subjectsByArea).forEach(area => {
+        const config = areaConfig[area] || areaConfig['otras'];
+        html += `
+            <div class="mb-4">
+                <h6 class="text-${config.color} border-bottom pb-2">
+                    <i class="fas fa-${config.icon} me-1"></i>${config.name}
+                </h6>
+                <div class="row">
+        `;
+        
+        subjectsByArea[area].forEach(subject => {
+            html += createSubjectCardHTML(subject, config.color);
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
+}
+
+function createSubjectCardHTML(subject, colorClass) {
+    return `
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 border-start border-${colorClass} border-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">${subject.name}</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                    type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="editSubject(${subject.id})">
+                                    <i class="fas fa-edit me-1"></i>Editar
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteSubject(${subject.id})">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <span class="badge bg-secondary me-1">${subject.code}</span>
+                        <span class="badge bg-${colorClass}">${subject.area_display || subject.area}</span>
+                    </div>
+                    <p class="card-text small text-muted mb-2">${subject.description || 'Sin descripción'}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>${subject.hours_per_week}h/semana
+                        </small>
+                        <small class="text-success fw-bold">
+                            <i class="fas fa-users me-1"></i>0 estudiantes
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createSubject() {
+    showNotification('Modal de crear materia - Por implementar', 'info');
+}
+
+function editSubject(id) {
+    showNotification('Modal de editar materia - Por implementar', 'info');
+}
+
+function deleteSubject(id) {
+    if (confirm('¿Está seguro de que desea eliminar esta materia?')) {
+        showNotification('Eliminar materia - Por implementar', 'warning');
+    }
+}
+
+// ================== Funciones de Acceso Rápido ==================
+
+function manageGrades() {
+    document.getElementById('grades-tab').click();
+}
+
+function manageSubjects() {
+    document.getElementById('subjects-tab').click();
+}
+
+function manageSchedules() {
+    window.open('/academic-system/schedules/', '_blank');
+}
+
+function viewReports() {
+    showNotification('Reportes - Por implementar', 'info');
+}
+
+// ================== Funciones de Notificaciones ==================
+
+function showNotification(message, type = 'info') {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${getAlertClass(type)} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    
+    notification.innerHTML = `
+        <i class="fas fa-${getAlertIcon(type)} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Agregar al DOM
+    document.body.appendChild(notification);
+    
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+function getAlertClass(type) {
+    const classes = {
+        'success': 'success',
+        'error': 'danger',
+        'warning': 'warning',
+        'info': 'info'
+    };
+    return classes[type] || 'info';
+}
+
+function getAlertIcon(type) {
+    const icons = {
+        'success': 'check-circle',
+        'error': 'exclamation-triangle',
+        'warning': 'exclamation-circle',
+        'info': 'info-circle'
+    };
+    return icons[type] || 'info-circle';
+}
+
+function showAlert(type, message) {
+    showNotification(message, type);
+}
+
+</script>
+
+<style>
+.border-left-primary { border-left: 0.25rem solid #4e73df !important; }
+.border-left-success { border-left: 0.25rem solid #1cc88a !important; }
+.border-left-info { border-left: 0.25rem solid #36b9cc !important; }
+.border-left-warning { border-left: 0.25rem solid #f6c23e !important; }
+.border-left-secondary { border-left: 0.25rem solid #858796 !important; }
+.border-left-dark { border-left: 0.25rem solid #5a5c69 !important; }
+</style>
+{% endblock %}

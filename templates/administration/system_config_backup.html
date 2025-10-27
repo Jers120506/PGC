@@ -1,0 +1,2369 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuración Académica - Administración{% endblock %}
+
+{% load static %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="card-title mb-0">
+                                <i class="fas fa-graduation-cap me-2"></i>
+                                Configuración Académica
+                            </h1>
+                            <p class="card-text mb-0">
+                                Gestión de estructura académica: grados, materias y años académicos
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'administration:dashboard' %}" class="btn btn-light">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Volver al Panel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Académicas -->
+    <div class="row mb-4">
+        <div class="col-xl-2 col-md-4 mb-3">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Grados</div>
+                            <div class="h5 mb-0">{{ total_models.grades }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-layer-group fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 mb-3">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Materias</div>
+                            <div class="h5 mb-0">{{ total_models.subjects }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-3">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Estudiantes</div>
+                            <div class="h5 mb-0">{{ total_models.students }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 mb-3">
+            <div class="card border-left-secondary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Horarios</div>
+                            <div class="h5 mb-0">{{ total_models.time_slots }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 mb-3">
+            <div class="card border-left-dark h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Años Académicos</div>
+                            <div class="h5 mb-0">{{ academic_years|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Gestión de Años Académicos -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        Años Académicos
+                    </h6>
+                    <button class="btn btn-primary btn-sm" onclick="openAcademicYearModal()">
+                        <i class="fas fa-plus me-1"></i>
+                        Nuevo Año
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Año Académico Actual -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">Año Académico Actual</h6>
+                        {% if current_academic_year %}
+                            <div class="alert alert-success d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ current_academic_year.name }}</strong><br>
+                                    <small>
+                                        Desde: {{ current_academic_year.start_date|date:"d/m/Y" }} 
+                                        hasta: {{ current_academic_year.end_date|date:"d/m/Y" }}
+                                    </small>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-success" onclick="editAcademicYear({{ current_academic_year.id }})">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </button>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <strong>⚠️ No hay año académico actual configurado</strong><br>
+                                <small>Es necesario configurar un año académico para el funcionamiento del sistema.</small>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Todos los Años Académicos -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">Historial de Años Académicos</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="academicYearsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Año</th>
+                                        <th>Fecha de Inicio</th>
+                                        <th>Fecha de Fin</th>
+                                        <th>Duración</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for year in academic_years %}
+                                    <tr>
+                                        <td><strong>{{ year.name }}</strong></td>
+                                        <td>{{ year.start_date|date:"d/m/Y" }}</td>
+                                        <td>{{ year.end_date|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {% if year.is_current %}
+                                                    {{ year.start_date|timesince }}
+                                                {% else %}
+                                                    {{ year.end_date|timeuntil }}
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% if year.is_current %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Actual
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactivo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button class="btn btn-sm btn-outline-primary" 
+                                                        onclick="openAcademicYearModal({{ year.id }})"
+                                                        title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                {% if not year.is_current %}
+                                                    <button class="btn btn-sm btn-outline-success" 
+                                                            onclick="setCurrentAcademicYear({{ year.id }}, '{{ year.name }}')"
+                                                            title="Establecer como actual">
+                                                        <i class="fas fa-star"></i>
+                                                    </button>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        onclick="deleteAcademicYear({{ year.id }}, '{{ year.name }}')"
+                                                        title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">
+                                            <i class="fas fa-calendar-times fa-2x mb-2"></i><br>
+                                            No hay años académicos configurados.
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestión de Grados -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-layer-group me-2"></i>
+                        Grados Escolares
+                    </h6>
+                    <button class="btn btn-primary btn-sm" onclick="openGradeModal()">
+                        <i class="fas fa-plus me-1"></i>
+                        Nuevo Grado
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Grados por Nivel -->
+                    <div class="row">
+                        <!-- Primaria -->
+                        <div class="col-md-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h6 class="text-primary mb-2">
+                                    <i class="fas fa-child me-2"></i>
+                                    Primaria
+                                </h6>
+                                <div id="grades-primaria" class="grades-container">
+                                    <!-- Los grados se cargarán aquí dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bachillerato -->
+                        <div class="col-md-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h6 class="text-primary mb-2">
+                                    <i class="fas fa-graduation-cap me-2"></i>
+                                    Bachillerato
+                                </h6>
+                                <div id="grades-bachillerato" class="grades-container">
+                                    <!-- Los grados se cargarán aquí dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Todos los Grados -->
+                    <div class="mt-3">
+                        <h6 class="text-primary">Todos los Grados</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Orden</th>
+                                        <th>Nombre</th>
+                                        <th>Nivel</th>
+                                        <th>Cursos</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="grades-table">
+                                    <!-- Los grados se cargarán aquí dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gestión de Materias/Asignaturas -->
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-book me-2"></i>
+                        Gestión de Materias/Asignaturas
+                    </h6>
+                    <button class="btn btn-info btn-sm" onclick="openSubjectModal()">
+                        <i class="fas fa-plus me-1"></i>
+                        Agregar Materia
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Materias por Área -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-info">Matemáticas y Ciencias</h6>
+                            <div id="subjects-matematicas" class="mb-3">
+                                <!-- Las materias de matemáticas se cargarán aquí -->
+                            </div>
+                            <div id="subjects-ciencias" class="mb-3">
+                                <!-- Las materias de ciencias se cargarán aquí -->
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-info">Humanidades y Artes</h6>
+                            <div id="subjects-lenguaje" class="mb-3">
+                                <!-- Las materias de lenguaje se cargarán aquí -->
+                            </div>
+                            <div id="subjects-sociales" class="mb-3">
+                                <!-- Las materias sociales se cargarán aquí -->
+                            </div>
+                            <div id="subjects-artes" class="mb-3">
+                                <!-- Las materias de artes se cargarán aquí -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Otras Áreas -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6 class="text-info">Idiomas</h6>
+                            <div id="subjects-ingles" class="mb-3">
+                                <!-- Materias de inglés -->
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-info">Educación Física</h6>
+                            <div id="subjects-educacion_fisica" class="mb-3">
+                                <!-- Educación física -->
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-info">Otras</h6>
+                            <div id="subjects-informatica" class="mb-3">
+                                <!-- Informática -->
+                            </div>
+                            <div id="subjects-religion" class="mb-3">
+                                <!-- Religión -->
+                            </div>
+                            <div id="subjects-etica" class="mb-3">
+                                <!-- Ética -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabla Completa de Materias -->
+                    <div class="mt-4">
+                        <h6 class="text-info">Todas las Materias</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Área</th>
+                                        <th>Horas/Semana</th>
+                                        <th>Descripción</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subjects-table">
+                                    <!-- Las materias se cargarán aquí dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel de Accesos Rápidos -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-tools me-2"></i>
+                        Accesos Rápidos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="manageGrades()">
+                            <i class="fas fa-layer-group me-2"></i>
+                            Gestionar Grados
+                        </button>
+                        <button class="btn btn-success" onclick="manageSubjects()">
+                            <i class="fas fa-book me-2"></i>
+                            Gestionar Materias
+                        </button>
+
+                        <button class="btn btn-warning" onclick="manageSchedules()">
+                            <i class="fas fa-clock me-2"></i>
+                            Sistema de Horarios
+                        </button>
+                        <hr>
+                        <button class="btn btn-outline-secondary" onclick="viewReports()">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Ver Reportes
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información del Sistema -->
+            <div class="card mt-3">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Estado del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Configuración:</strong><br>
+                        {% if current_academic_year %}
+                            <span class="badge bg-success">Año académico configurado</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pendiente configuración</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Estructura Académica:</strong><br>
+                        <small class="text-muted">
+                            {{ total_models.grades }} grados, {{ total_models.subjects }} materias<br>
+                            {{ total_models.courses }} cursos configurados
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Última Actualización:</strong><br>
+                        <small class="text-muted">{{ request.user.last_login|date:"d/m/Y H:i" }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pestañas de Gestión Detallada -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="academicTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="grades-tab" data-bs-toggle="tab" data-bs-target="#grades" 
+                                    type="button" role="tab" aria-controls="grades" aria-selected="true">
+                                <i class="fas fa-layer-group me-1"></i>Grados
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="subjects-tab" data-bs-toggle="tab" data-bs-target="#subjects" 
+                                    type="button" role="tab" aria-controls="subjects" aria-selected="false">
+                                <i class="fas fa-book me-1"></i>Materias
+                            </button>
+                        </li>
+
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="academicTabsContent">
+                        <!-- Tab de Grados -->
+                        <div class="tab-pane fade show active" id="grades" role="tabpanel" aria-labelledby="grades-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Gestión de Grados</h5>
+                                <button class="btn btn-primary" onclick="createGrade()">
+                                    <i class="fas fa-plus me-1"></i>Nuevo Grado
+                                </button>
+                            </div>
+                            <div id="gradesContent">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin fa-2x"></i><br>
+                                    Cargando grados...
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab de Materias -->
+                        <div class="tab-pane fade" id="subjects" role="tabpanel" aria-labelledby="subjects-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Gestión de Materias</h5>
+                                <button class="btn btn-success" onclick="createSubject()">
+                                    <i class="fas fa-plus me-1"></i>Nueva Materia
+                                </button>
+                            </div>
+                            <div id="subjectsContent">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin fa-2x"></i><br>
+                                    Cargando materias...
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Acciones -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tools me-2"></i>
+                        Herramientas del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'administration:admin_users' %}" class="btn btn-primary">
+                            <i class="fas fa-users-cog me-2"></i>
+                            Gestión de Usuarios
+                        </a>
+                        
+                        <a href="{% url 'administration:backup_management' %}" class="btn btn-warning">
+                            <i class="fas fa-database me-2"></i>
+                            Gestión de Respaldos
+                        </a>
+                        
+                        <hr>
+                        
+                        <button class="btn btn-success" onclick="runSystemCheck()">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Verificar Sistema
+                        </button>
+                        
+                        <button class="btn btn-secondary" onclick="clearCache()">
+                            <i class="fas fa-broom me-2"></i>
+                            Limpiar Caché
+                        </button>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <h6 class="text-primary">Sistema</h6>
+                        <p class="mb-1"><strong>Django:</strong> 5.2.1</p>
+                        <p class="mb-1"><strong>Python:</strong> 3.13</p>
+                        <p class="mb-0"><strong>Base de Datos:</strong> SQLite</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modales -->
+<!-- Modal para Años Académicos -->
+<div class="modal fade" id="academicYearModal" tabindex="-1" aria-labelledby="academicYearModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="academicYearForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="academicYearModalLabel">Nuevo Año Académico</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="academicYearId" name="id">
+                    
+                    <div class="mb-3">
+                        <label for="academicYearName" class="form-label">Nombre del Año Académico *</label>
+                        <input type="text" class="form-control" id="academicYearName" name="name" 
+                               placeholder="Ej: 2025" required>
+                        <div class="form-text">Año académico en formato YYYY</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="academicStartDate" class="form-label">Fecha de Inicio *</label>
+                            <input type="date" class="form-control" id="academicStartDate" name="start_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="academicEndDate" class="form-label">Fecha de Fin *</label>
+                            <input type="date" class="form-control" id="academicEndDate" name="end_date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isCurrentYear" name="is_current">
+                            <label class="form-check-label" for="isCurrentYear">
+                                Establecer como año académico actual
+                            </label>
+                            <div class="form-text">Solo puede haber un año académico activo a la vez</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Grados -->
+<div class="modal fade" id="gradeModal" tabindex="-1" aria-labelledby="gradeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="gradeForm" onsubmit="saveGrade(event)">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="gradeModalLabel">Nuevo Grado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="gradeId" name="gradeId">
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="gradeName" class="form-label">Nombre del Grado *</label>
+                            <input type="text" class="form-control" id="gradeName" name="gradeName" 
+                                   placeholder="ej: 5° Primaria, 9° Bachillerato" required>
+                            <div class="form-text">Ejemplo: 1° Primaria, 6° Bachillerato</div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="gradeOrder" class="form-label">Orden *</label>
+                            <input type="number" class="form-control" id="gradeOrder" name="gradeOrder" 
+                                   min="1" max="20" required>
+                            <div class="form-text">Para ordenar</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="gradeLevel" class="form-label">Nivel *</label>
+                        <select class="form-control" id="gradeLevel" name="gradeLevel" required>
+                            <option value="">Seleccionar nivel...</option>
+                            <option value="primaria">Primaria</option>
+                            <option value="bachillerato">Bachillerato</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Materias -->
+<div class="modal fade" id="subjectModal" tabindex="-1" aria-labelledby="subjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="subjectForm" onsubmit="saveSubject(event)">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="subjectModalLabel">Nueva Materia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="subjectId" name="id">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="subjectName" class="form-label">
+                                    <i class="fas fa-book me-1"></i>Nombre de la Materia *
+                                </label>
+                                <input type="text" class="form-control" id="subjectName" name="name" 
+                                       placeholder="Ej: Matemáticas" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="subjectCode" class="form-label">
+                                    <i class="fas fa-code me-1"></i>Código *
+                                </label>
+                                <input type="text" class="form-control" id="subjectCode" name="code" 
+                                       placeholder="Ej: MAT" maxlength="10" required>
+                                <div class="form-text">Código único de 3-10 caracteres</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="subjectArea" class="form-label">
+                                    <i class="fas fa-layer-group me-1"></i>Área Académica *
+                                </label>
+                                <select class="form-select" id="subjectArea" name="area" required>
+                                    <option value="">Seleccione un área</option>
+                                    <option value="matematicas">Matemáticas</option>
+                                    <option value="ciencias">Ciencias Naturales</option>
+                                    <option value="sociales">Ciencias Sociales</option>
+                                    <option value="lenguaje">Lenguaje y Literatura</option>
+                                    <option value="ingles">Inglés</option>
+                                    <option value="educacion_fisica">Educación Física</option>
+                                    <option value="artes">Artes</option>
+                                    <option value="informatica">Informática</option>
+                                    <option value="religion">Religión</option>
+                                    <option value="etica">Ética y Valores</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="subjectHours" class="form-label">
+                                    <i class="fas fa-clock me-1"></i>Horas por Semana *
+                                </label>
+                                <input type="number" class="form-control" id="subjectHours" name="hours_per_week" 
+                                       min="1" max="20" placeholder="Ej: 5" required>
+                                <div class="form-text">Entre 1 y 20 horas semanales</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="subjectDescription" class="form-label">
+                            <i class="fas fa-align-left me-1"></i>Descripción
+                        </label>
+                        <textarea class="form-control" id="subjectDescription" name="description" rows="3"
+                                  placeholder="Descripción opcional de la materia"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-save me-1"></i>Guardar Materia
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="courseModalLabel">Nuevo Curso</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="courseId" name="id">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="courseGrade" class="form-label">
+                                    <i class="fas fa-layer-group me-1"></i>Grado *
+                                </label>
+                                <select class="form-select" id="courseGrade" name="grade_id" required>
+                                    <option value="">Seleccione un grado</option>
+                                    <!-- Los grados se cargarán dinámicamente -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="courseSection" class="form-label">
+                                    <i class="fas fa-tags me-1"></i>Sección *
+                                </label>
+                                <select class="form-select" id="courseSection" name="section" required>
+                                    <option value="">Seleccione una sección</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                    <option value="E">E</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="courseAcademicYear" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Año Académico *
+                                </label>
+                                <select class="form-select" id="courseAcademicYear" name="academic_year_id" required>
+                                    <option value="">Seleccione un año académico</option>
+                                    <!-- Los años académicos se cargarán dinámicamente -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="courseMaxStudents" class="form-label">
+                                    <i class="fas fa-users me-1"></i>Máximo de Estudiantes *
+                                </label>
+                                <input type="number" class="form-control" id="courseMaxStudents" name="max_students" 
+                                       min="10" max="50" value="30" placeholder="30" required>
+                                <div class="form-text">Entre 10 y 50 estudiantes</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="courseIsActive" name="is_active" checked>
+                                    <label class="form-check-label" for="courseIsActive">
+                                        <i class="fas fa-toggle-on me-1"></i>Curso activo
+                                    </label>
+                                    <div class="form-text">Los cursos inactivos no aparecerán en las opciones de inscripción</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-save me-1"></i>Guardar Curso
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// ================== Funciones para Años Académicos ==================
+
+function openAcademicYearModal(yearId = null) {
+    const modal = new bootstrap.Modal(document.getElementById('academicYearModal'));
+    const form = document.getElementById('academicYearForm');
+    const modalTitle = document.getElementById('academicYearModalLabel');
+    
+    // Limpiar formulario
+    form.reset();
+    
+    if (yearId) {
+        // Modo edición
+        modalTitle.textContent = 'Editar Año Académico';
+        document.getElementById('academicYearId').value = yearId;
+        
+        // Aquí cargarías los datos del año académico para editar
+        // Por ahora, implementaremos solo creación
+    } else {
+        // Modo creación
+        modalTitle.textContent = 'Nuevo Año Académico';
+        document.getElementById('academicYearId').value = '';
+    }
+    
+    modal.show();
+}
+
+function saveAcademicYear() {
+    const form = document.getElementById('academicYearForm');
+    const formData = new FormData(form);
+    const yearId = formData.get('id');
+    
+    const data = {
+        name: formData.get('name'),
+        start_date: formData.get('start_date'),
+        end_date: formData.get('end_date'),
+        is_current: formData.get('is_current') === 'on'
+    };
+    
+    if (yearId) {
+        data.id = yearId;
+    }
+    
+    const url = yearId ? 
+        '{% url "administration:update_academic_year_api" %}' : 
+        '{% url "administration:create_academic_year_api" %}';
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            bootstrap.Modal.getInstance(document.getElementById('academicYearModal')).hide();
+            loadAcademicYears(); // Recargar la tabla
+        } else {
+            showAlert('error', data.error || 'Error al guardar el año académico');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Error de conexión');
+    });
+}
+
+function deleteAcademicYear(yearId, yearName) {
+    console.log('deleteAcademicYear called with:', { yearId, yearName });
+    
+    if (!confirm(`¿Está seguro que desea eliminar el año académico "${yearName}"?\n\nEsta acción no se puede deshacer.`)) {
+        console.log('User cancelled deletion');
+        return;
+    }
+    
+    console.log('Sending delete request for year ID:', yearId);
+    
+    fetch('{% url "administration:delete_academic_year_api" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ id: yearId })
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            // Mostrar mensaje de éxito
+            showAlert('success', data.message);
+            
+            // Remover visualmente la fila de la tabla antes de recargar
+            const row = document.querySelector(`button[onclick="deleteAcademicYear(${yearId}, '${yearName}')"]`)?.closest('tr');
+            if (row) {
+                row.style.opacity = '0.5';
+                row.style.textDecoration = 'line-through';
+            }
+            
+            // Recargar después de un breve delay
+            setTimeout(() => {
+                loadAcademicYears();
+            }, 1000);
+        } else {
+            showAlert('error', data.error || 'Error al eliminar el año académico');
+        }
+    })
+    .catch(error => {
+        console.error('Error in deleteAcademicYear:', error);
+        showAlert('error', 'Error de conexión');
+    });
+}
+
+function setCurrentAcademicYear(yearId, yearName) {
+    if (!confirm(`¿Está seguro que desea establecer "${yearName}" como el año académico actual?\n\nEsto desactivará el año académico actual.`)) {
+        return;
+    }
+    
+    fetch('{% url "administration:set_current_academic_year_api" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ id: yearId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            loadAcademicYears(); // Recargar la tabla
+        } else {
+            showAlert('error', data.error || 'Error al establecer año académico actual');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Error de conexión');
+    });
+}
+
+function loadAcademicYears() {
+    console.log('=== CARGANDO AÑOS ACADÉMICOS ===');
+    
+    fetch('/academics_extended/api/academic-years/')
+        .then(response => {
+            console.log('Status:', response.status);
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error(`HTTP ${response.status}`);
+        })
+        .then(data => {
+            console.log('Años académicos cargados:', data);
+            displayAcademicYears(data.data || data);
+        })
+        .catch(error => {
+            console.error('Error cargando años académicos:', error);
+            showAlert('error', 'Error al cargar años académicos: ' + error.message);
+        });
+}
+
+function displayAcademicYears(years) {
+    const tableBody = document.getElementById('academic-years-table');
+    if (!tableBody) {
+        console.error('No se encontró la tabla de años académicos');
+        return;
+    }
+    
+    tableBody.innerHTML = '';
+    
+    if (years.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-muted">
+                    <i class="fas fa-calendar-alt fa-2x mb-2"></i><br>
+                    No hay años académicos configurados.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    years.forEach(year => {
+        const row = document.createElement('tr');
+        const isActive = year.is_current;
+        
+        row.innerHTML = `
+            <td>
+                <strong>${year.name}</strong>
+                ${isActive ? '<span class="badge bg-success ms-2">ACTIVO</span>' : ''}
+            </td>
+            <td>${year.start_date}</td>
+            <td>${year.end_date}</td>
+            <td>
+                ${!isActive ? `
+                    <button class="btn btn-sm btn-success me-1" onclick="setCurrentAcademicYear(${year.id}, '${year.name}')" title="Activar">
+                        <i class="fas fa-power-off"></i>
+                    </button>
+                ` : ''}
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="openAcademicYearModal(${year.id})" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteAcademicYear(${year.id}, '${year.name}')" title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+}
+
+// ================== Funciones de Utilidad ==================
+
+function showAlert(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const iconClass = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
+    
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="${iconClass} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Insertar la alerta al inicio del contenido principal
+    const container = document.querySelector('.container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-eliminar después de 5 segundos
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// ================== Event Listeners ==================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== INICIALIZANDO PÁGINA DE CONFIGURACIÓN ===');
+    
+    // Manejar envío del formulario de año académico
+    const academicYearForm = document.getElementById('academicYearForm');
+    if (academicYearForm) {
+        academicYearForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveAcademicYear();
+        });
+    }
+    
+    // Cargar datos iniciales
+    console.log('Cargando años académicos...');
+    loadAcademicYears();
+    
+    console.log('Cargando grados...');
+    loadGrades();
+    
+    console.log('Cargando materias...');
+    loadSubjects();
+    
+    console.log('Cargando cursos...');
+    loadCourses();
+    
+    // Manejadores de eventos para las pestañas
+    const tabButtons = document.querySelectorAll('#academicTabs button[data-bs-toggle="tab"]');
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function(event) {
+            const targetTab = event.target.getAttribute('data-bs-target');
+            console.log('Pestaña activada:', targetTab);
+            
+            // Recargar datos específicos de cada pestaña si es necesario
+            if (targetTab === '#grades') {
+                loadGrades();
+            } else if (targetTab === '#subjects') {
+                loadSubjects();
+            } else if (targetTab === '#courses') {
+                loadCourses();
+            }
+        });
+    });
+    
+    console.log('=== INICIALIZACIÓN COMPLETA ===');
+});
+
+// ================== Funciones Heredadas ==================
+
+function runSystemCheck() {
+    alert('Verificación del sistema será implementada próximamente.\n\nEsta función verificará:\n- Estado de la base de datos\n- Configuraciones críticas\n- Integridad de los datos');
+}
+
+function clearCache() {
+    if (confirm('¿Está seguro que desea limpiar el caché del sistema?')) {
+        alert('Funcionalidad de limpieza de caché será implementada próximamente.');
+    }
+}
+
+// ================== Funciones de Acceso Rápido ==================
+
+function manageGrades() {
+    // Activar pestaña de grados
+    const gradesTab = document.getElementById('grades-tab');
+    const tabTrigger = new bootstrap.Tab(gradesTab);
+    tabTrigger.show();
+    
+    // Scroll hasta la sección
+    document.getElementById('academicTabs').scrollIntoView({ behavior: 'smooth' });
+    
+    // Recargar datos de grados
+    setTimeout(() => {
+        loadGrades();
+    }, 300);
+}
+
+function manageSubjects() {
+    // Activar pestaña de materias
+    const subjectsTab = document.getElementById('subjects-tab');
+    const tabTrigger = new bootstrap.Tab(subjectsTab);
+    tabTrigger.show();
+    
+    // Scroll hasta la sección
+    document.getElementById('academicTabs').scrollIntoView({ behavior: 'smooth' });
+    
+    // Recargar datos de materias
+    setTimeout(() => {
+        loadSubjects();
+    }, 300);
+}
+
+function manageCourses() {
+    // Activar pestaña de cursos
+    const coursesTab = document.getElementById('courses-tab');
+    const tabTrigger = new bootstrap.Tab(coursesTab);
+    tabTrigger.show();
+    
+    // Scroll hasta la sección
+    document.getElementById('academicTabs').scrollIntoView({ behavior: 'smooth' });
+    
+    // Recargar datos de cursos
+    setTimeout(() => {
+        loadCourses();
+    }, 300);
+}
+
+function manageSchedules() {
+    showAlert('info', 'Sistema de Horarios - Próximamente', 'Esta funcionalidad será implementada en una futura actualización.');
+}
+
+function viewReports() {
+    showAlert('info', 'Reportes Académicos - Próximamente', 'Los reportes estadísticos serán implementados en una futura actualización.');
+}
+
+// ================== Función para obtener CSRF Token ==================
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// ================== Funciones para Grados ==================
+
+function openGradeModal(gradeId = null) {
+    const modal = new bootstrap.Modal(document.getElementById('gradeModal'));
+    const form = document.getElementById('gradeForm');
+    const modalTitle = document.getElementById('gradeModalLabel');
+    
+    // Limpiar formulario
+    form.reset();
+    
+    if (gradeId) {
+        // Modo edición
+        modalTitle.textContent = 'Editar Grado';
+        document.getElementById('gradeId').value = gradeId;
+        
+        // Cargar datos del grado para editar
+        fetch(`/academics_extended/api/grades/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const grade = data.data.find(g => g.id == gradeId);
+                    if (grade) {
+                        document.getElementById('gradeName').value = grade.name;
+                        document.getElementById('gradeLevel').value = grade.level;
+                        document.getElementById('gradeOrder').value = grade.order;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error cargando grado:', error);
+                showAlert('Error cargando los datos del grado', 'error');
+            });
+    } else {
+        // Modo creación
+        modalTitle.textContent = 'Nuevo Grado';
+        document.getElementById('gradeId').value = '';
+    }
+    
+    modal.show();
+}
+
+function saveGrade(event) {
+    event.preventDefault();
+    
+    const gradeId = document.getElementById('gradeId').value;
+    const formData = {
+        name: document.getElementById('gradeName').value.trim(),
+        level: document.getElementById('gradeLevel').value,
+        order: parseInt(document.getElementById('gradeOrder').value)
+    };
+    
+    // Validaciones
+    if (!formData.name || !formData.level || !formData.order) {
+        showAlert('Por favor complete todos los campos obligatorios', 'error');
+        return;
+    }
+    
+    console.log('Guardando grado:', formData);
+    
+    const url = gradeId ? 
+        `/academics_extended/api/grades/${gradeId}/update/` : 
+        '/academics_extended/api/grades/create/';
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Respuesta del servidor:', data);
+        
+        if (data.status === 'success') {
+            showAlert(data.message, 'success');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('gradeModal'));
+            modal.hide();
+            
+            // Recargar lista de grados
+            loadGrades();
+        } else {
+            showAlert(data.message || 'Error al guardar el grado', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error de conexión al guardar el grado', 'error');
+    });
+}
+
+function deleteGrade(gradeId, gradeName) {
+    if (confirm(`¿Está seguro que desea eliminar el grado "${gradeName}"?\n\nEsta acción no se puede deshacer.`)) {
+        console.log('Eliminando grado ID:', gradeId);
+        
+        fetch(`/academics_extended/api/grades/${gradeId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respuesta de eliminación:', data);
+            
+            if (data.status === 'success') {
+                showAlert(data.message, 'success');
+                loadGrades();
+            } else {
+                showAlert(data.message || 'Error al eliminar el grado', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error de conexión al eliminar el grado', 'error');
+        });
+    }
+}
+
+function loadGrades() {
+    console.log('=== INICIANDO CARGA DE GRADOS ===');
+    
+    const url = '/academics_extended/api/grades/';
+    console.log('URL a consultar:', url);
+    
+    fetch(url)
+        .then(response => {
+            console.log('Respuesta recibida:', response.status, response.statusText);
+            console.log('Content-Type:', response.headers.get('content-type'));
+            
+            if (response.status === 200) {
+                return response.json();
+            } else {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+        })
+        .then(data => {
+            console.log('Datos JSON recibidos:', data);
+            
+            if (data.status === 'success') {
+                console.log('✅ Datos válidos, mostrando grados...');
+                displayGrades(data.grades);
+            } else {
+                console.error('❌ Error en la respuesta del servidor:', data);
+                showAlert('Error al cargar los grados: ' + (data.message || 'Error desconocido'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error en la carga:', error);
+            showAlert('Error de conexión al cargar los grados: ' + error.message, 'error');
+            
+            // Mostrar mensaje en la tabla si no hay grados
+            const tableBody = document.getElementById('grades-table');
+            if (tableBody) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-danger">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>
+                            Error al cargar los grados: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        });
+}
+
+function displayGrades(grades) {
+    const content = document.getElementById('gradesContent');
+    
+    if (!content) {
+        console.error('No se encontró el contenedor gradesContent');
+        return;
+    }
+    
+    if (grades.length === 0) {
+        content.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-layer-group fa-3x mb-3"></i>
+                <h5>No hay grados configurados</h5>
+                <p>Comience creando el primer grado del sistema</p>
+                <button class="btn btn-primary" onclick="createGrade()">
+                    <i class="fas fa-plus me-1"></i>Crear Primer Grado
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Agrupar grados por nivel
+    const primaryGrades = grades.filter(g => g.level === 'primaria');
+    const secondaryGrades = grades.filter(g => g.level === 'bachillerato');
+    
+    let html = '';
+    
+    if (primaryGrades.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-primary border-bottom pb-2">
+                    <i class="fas fa-graduation-cap me-1"></i>Educación Primaria
+                </h6>
+                <div class="row">
+        `;
+        
+        primaryGrades.forEach(grade => {
+            html += createGradeCardHTML(grade);
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    if (secondaryGrades.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-info border-bottom pb-2">
+                    <i class="fas fa-university me-1"></i>Educación Secundaria
+                </h6>
+                <div class="row">
+        `;
+        
+        secondaryGrades.forEach(grade => {
+            html += createGradeCardHTML(grade);
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    content.innerHTML = html;
+    
+    // Llenar tabla completa
+    grades.forEach(grade => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><span class="badge bg-secondary">${grade.order}</span></td>
+            <td><strong>${grade.name}</strong></td>
+            <td><span class="badge ${grade.level === 'primaria' ? 'bg-info' : 'bg-primary'}">${grade.level_display}</span></td>
+            <td><span class="text-muted">0 cursos</span></td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="openGradeModal(${grade.id})" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteGrade(${grade.id}, '${grade.name}')" title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function createGradeCardHTML(grade) {
+    return `
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 border-start border-primary border-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">${grade.name}</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                    type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="editGrade(${grade.id})">
+                                    <i class="fas fa-edit me-1"></i>Editar
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteGrade(${grade.id})">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="card-text small text-muted mb-2">${grade.description || 'Sin descripción'}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-${grade.level === 'primaria' ? 'primary' : 'info'}">
+                            ${grade.level === 'primaria' ? 'Primaria' : 'Secundaria'}
+                        </span>
+                        <small class="text-muted">Grado ${grade.grade_number}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createGradeCard(grade) {
+    const card = document.createElement('div');
+    card.className = 'card card-body mb-2 p-2';
+    card.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <strong>${grade.name}</strong>
+                <small class="text-muted d-block">Orden: ${grade.order}</small>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="openGradeModal(${grade.id})" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteGrade(${grade.id}, '${grade.name}')" title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    return card;
+}
+
+function createGrade() {
+    // Mostrar modal para crear grado
+    const modal = new bootstrap.Modal(document.getElementById('gradeModal'));
+    document.getElementById('gradeModalTitle').textContent = 'Crear Nuevo Grado';
+    document.getElementById('gradeForm').reset();
+    document.getElementById('gradeId').value = '';
+    modal.show();
+}
+
+function editGrade(id) {
+    // Obtener datos del grado y mostrar modal para editar
+    fetch(`/academics_extended/api/grades/${id}/`)
+        .then(response => response.json())
+        .then(grade => {
+            const modal = new bootstrap.Modal(document.getElementById('gradeModal'));
+            document.getElementById('gradeModalTitle').textContent = 'Editar Grado';
+            document.getElementById('gradeId').value = grade.id;
+            document.getElementById('gradeName').value = grade.name;
+            document.getElementById('gradeDescription').value = grade.description || '';
+            document.getElementById('gradeLevel').value = grade.level;
+            document.getElementById('gradeNumber').value = grade.grade_number;
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al cargar el grado', 'error');
+        });
+}
+
+function deleteGrade(id) {
+    if (confirm('¿Está seguro de que desea eliminar este grado?')) {
+        fetch(`/academics_extended/api/grades/${id}/`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                showNotification('Grado eliminado exitosamente', 'success');
+                loadGrades(); // Recargar la lista
+            } else {
+                throw new Error('Error al eliminar el grado');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al eliminar el grado', 'error');
+        });
+    }
+}
+
+// ================== Funciones para Materias/Asignaturas ==================
+
+function loadSubjects() {
+    console.log('=== CARGANDO MATERIAS ===');
+    
+    fetch('/academics_extended/api/subjects/')
+        .then(response => {
+            console.log('Status:', response.status);
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error(`HTTP ${response.status}`);
+        })
+        .then(data => {
+            console.log('Materias cargadas:', data);
+            if (data.status === 'success') {
+                displaySubjects(data.subjects);
+            } else {
+                showAlert('error', 'Error al cargar materias: ' + (data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando materias:', error);
+            showAlert('error', 'Error al cargar materias: ' + error.message);
+        });
+}
+
+function displaySubjects(subjects) {
+    const content = document.getElementById('subjectsContent');
+    if (!content) {
+        console.error('No se encontró el contenedor subjectsContent');
+        return;
+    }
+    
+    if (subjects.length === 0) {
+        content.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-book fa-3x mb-3"></i>
+                <h5>No hay materias configuradas</h5>
+                <p>Comience creando la primera materia del sistema</p>
+                <button class="btn btn-success" onclick="createSubject()">
+                    <i class="fas fa-plus me-1"></i>Crear Primera Materia
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Agrupar materias por área
+    const subjectsByArea = {};
+    subjects.forEach(subject => {
+        const area = subject.area || 'otras';
+        if (!subjectsByArea[area]) {
+            subjectsByArea[area] = [];
+        }
+        subjectsByArea[area].push(subject);
+    });
+    
+    // Definir colores y nombres de áreas
+    const areaConfig = {
+        'matematicas': { name: 'Matemáticas', color: 'primary', icon: 'calculator' },
+        'ciencias': { name: 'Ciencias', color: 'success', icon: 'atom' },
+        'lenguaje': { name: 'Lenguaje', color: 'info', icon: 'pen-fancy' },
+        'sociales': { name: 'Ciencias Sociales', color: 'warning', icon: 'globe' },
+        'artes': { name: 'Artes', color: 'danger', icon: 'palette' },
+        'ingles': { name: 'Inglés', color: 'secondary', icon: 'language' },
+        'educacion_fisica': { name: 'Educación Física', color: 'dark', icon: 'running' },
+        'informatica': { name: 'Informática', color: 'primary', icon: 'laptop-code' },
+        'religion': { name: 'Religión', color: 'light', icon: 'cross' },
+        'etica': { name: 'Ética', color: 'secondary', icon: 'balance-scale' },
+        'otras': { name: 'Otras Materias', color: 'muted', icon: 'book' }
+    };
+    
+    let html = '';
+    
+    Object.keys(subjectsByArea).forEach(area => {
+        const config = areaConfig[area] || areaConfig['otras'];
+        html += `
+            <div class="mb-4">
+                <h6 class="text-${config.color} border-bottom pb-2">
+                    <i class="fas fa-${config.icon} me-1"></i>${config.name}
+                </h6>
+                <div class="row">
+        `;
+        
+        subjectsByArea[area].forEach(subject => {
+            html += createSubjectCardHTML(subject, config.color);
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
+    
+    // Llenar tabla completa
+    subjects.forEach(subject => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><span class="badge bg-secondary">${subject.code}</span></td>
+            <td><strong>${subject.name}</strong></td>
+            <td><span class="badge bg-info">${subject.area_display}</span></td>
+            <td>${subject.hours_per_week}h</td>
+            <td>${subject.description || '<em class="text-muted">Sin descripción</em>'}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="openSubjectModal(${subject.id})" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteSubject(${subject.id}, '${subject.name}')" title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function createSubjectCard(subject) {
+    const card = document.createElement('div');
+    card.className = 'card card-body mb-2 p-2';
+    card.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <strong>${subject.name}</strong> <span class="badge bg-secondary">${subject.code}</span>
+                <small class="text-muted d-block">${subject.hours_per_week}h/semana</small>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="openSubjectModal(${subject.id})" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteSubject(${subject.id}, '${subject.name}')" title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    return card;
+}
+
+function createSubjectCardHTML(subject, colorClass) {
+    return `
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 border-start border-${colorClass} border-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">${subject.name}</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                    type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="editSubject(${subject.id})">
+                                    <i class="fas fa-edit me-1"></i>Editar
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteSubject(${subject.id})">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <span class="badge bg-secondary me-1">${subject.code}</span>
+                        <span class="badge bg-${colorClass}">${subject.area_display || subject.area}</span>
+                    </div>
+                    <p class="card-text small text-muted mb-2">${subject.description || 'Sin descripción'}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>${subject.hours_per_week}h/semana
+                        </small>
+                        <small class="text-success fw-bold">
+                            <i class="fas fa-users me-1"></i>0 estudiantes
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createSubject() {
+    // Mostrar modal para crear materia
+    const modal = new bootstrap.Modal(document.getElementById('subjectModal'));
+    document.getElementById('subjectModalTitle').textContent = 'Crear Nueva Materia';
+    document.getElementById('subjectForm').reset();
+    document.getElementById('subjectId').value = '';
+    modal.show();
+}
+
+function editSubject(id) {
+    // Obtener datos de la materia y mostrar modal para editar
+    fetch(`/academics_extended/api/subjects/${id}/`)
+        .then(response => response.json())
+        .then(subject => {
+            const modal = new bootstrap.Modal(document.getElementById('subjectModal'));
+            document.getElementById('subjectModalTitle').textContent = 'Editar Materia';
+            document.getElementById('subjectId').value = subject.id;
+            document.getElementById('subjectName').value = subject.name;
+            document.getElementById('subjectCode').value = subject.code;
+            document.getElementById('subjectArea').value = subject.area;
+            document.getElementById('subjectDescription').value = subject.description || '';
+            document.getElementById('subjectHours').value = subject.hours_per_week;
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al cargar la materia', 'error');
+        });
+}
+
+function deleteSubject(id) {
+    if (confirm('¿Está seguro de que desea eliminar esta materia?')) {
+        fetch(`/academics_extended/api/subjects/${id}/`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                showNotification('Materia eliminada exitosamente', 'success');
+                loadSubjects(); // Recargar la lista
+            } else {
+                throw new Error('Error al eliminar la materia');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al eliminar la materia', 'error');
+        });
+    }
+}
+
+function openSubjectModal(subjectId = null) {
+    const modal = new bootstrap.Modal(document.getElementById('subjectModal'));
+    const form = document.getElementById('subjectForm');
+    const modalTitle = document.getElementById('subjectModalLabel');
+    
+    // Limpiar formulario
+    form.reset();
+    
+    if (subjectId) {
+        // Modo edición
+        modalTitle.textContent = 'Editar Materia';
+        document.getElementById('subjectId').value = subjectId;
+        
+        // Cargar datos de la materia para editar
+        fetch(`/academics_extended/api/subjects/`)
+            .then(response => response.json())
+            .then(data => {
+                const subject = data.data.find(s => s.id === subjectId);
+                if (subject) {
+                    document.getElementById('subjectName').value = subject.name;
+                    document.getElementById('subjectCode').value = subject.code;
+                    document.getElementById('subjectArea').value = subject.area;
+                    document.getElementById('subjectHours').value = subject.hours_per_week;
+                    document.getElementById('subjectDescription').value = subject.description;
+                }
+            })
+            .catch(error => {
+                console.error('Error cargando materia:', error);
+                showAlert('error', 'Error al cargar datos de la materia');
+            });
+    } else {
+        // Modo creación
+        modalTitle.textContent = 'Nueva Materia';
+        document.getElementById('subjectId').value = '';
+    }
+    
+    modal.show();
+}
+
+function saveSubject(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('subjectForm');
+    const formData = new FormData(form);
+    const subjectId = formData.get('id');
+    
+    const data = {
+        name: formData.get('name').trim(),
+        code: formData.get('code').trim().toUpperCase(),
+        area: formData.get('area'),
+        hours_per_week: parseInt(formData.get('hours_per_week')),
+        description: formData.get('description').trim()
+    };
+    
+    // Validación básica
+    if (!data.name || !data.code || !data.area || !data.hours_per_week) {
+        showAlert('error', 'Por favor complete todos los campos obligatorios');
+        return;
+    }
+    
+    console.log('Guardando materia:', data);
+    
+    const url = subjectId ? 
+        `/academics_extended/api/subjects/${subjectId}/update/` : 
+        '/academics_extended/api/subjects/create/';
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Respuesta del servidor:', data);
+        
+        if (data.status === 'success') {
+            showAlert('success', data.message);
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('subjectModal'));
+            modal.hide();
+            
+            // Recargar lista de materias
+            loadSubjects();
+        } else {
+            showAlert('error', data.message || 'Error al guardar la materia');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Error de conexión al guardar la materia');
+    });
+}
+
+function deleteSubject(subjectId, subjectName) {
+    if (confirm(`¿Está seguro que desea eliminar la materia "${subjectName}"?\n\nEsta acción no se puede deshacer.`)) {
+        console.log('Eliminando materia ID:', subjectId);
+        
+        fetch(`/academics_extended/api/subjects/${subjectId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respuesta del servidor:', data);
+            
+            if (data.status === 'success') {
+                showAlert('success', data.message);
+                loadSubjects();
+            } else {
+                showAlert('error', data.message || 'Error al eliminar la materia');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error de conexión al eliminar la materia');
+        });
+    }
+}
+
+// ================== Funciones para Cursos ==================
+
+function loadCourses() {
+    fetch('/academics_extended/api/courses/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                displayCourses(data.courses);
+            } else {
+                showAlert('error', 'Error al cargar cursos: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error de conexión al cargar cursos');
+        });
+}
+
+function displayCourses(courses) {
+    const content = document.getElementById('coursesContent');
+    
+    if (courses.length === 0) {
+        content.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-users fa-3x mb-3"></i>
+                <h5>No hay cursos configurados</h5>
+                <p>Comience creando el primer curso del sistema</p>
+                <button class="btn btn-info" onclick="createCourse()">
+                    <i class="fas fa-plus me-1"></i>Crear Primer Curso
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Agrupar cursos por año académico
+    const coursesByYear = courses.reduce((acc, course) => {
+        const year = course.academic_year_name;
+        if (!acc[year]) {
+            acc[year] = [];
+        }
+        acc[year].push(course);
+        return acc;
+    }, {});
+    
+    let html = '';
+    
+    for (const [year, yearCourses] of Object.entries(coursesByYear)) {
+        html += `
+            <div class="mb-4">
+                <h6 class="text-info border-bottom pb-2">
+                    <i class="fas fa-calendar me-1"></i>${year}
+                </h6>
+                <div class="row">
+        `;
+        
+        yearCourses.forEach(course => {
+            const statusColor = course.is_active ? 'success' : 'secondary';
+            const statusIcon = course.is_active ? 'check-circle' : 'pause-circle';
+            const statusText = course.is_active ? 'Activo' : 'Inactivo';
+            
+            html += `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100 ${!course.is_active ? 'bg-light' : ''}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-graduation-cap me-1"></i>
+                                    ${course.grade_name} - ${course.section}
+                                </h6>
+                                <span class="badge bg-${statusColor}">
+                                    <i class="fas fa-${statusIcon} me-1"></i>${statusText}
+                                </span>
+                            </div>
+                            
+                            <div class="small text-muted mb-2">
+                                <div><i class="fas fa-users me-1"></i>Estudiantes: ${course.current_students_count}/${course.max_students}</div>
+                                <div><i class="fas fa-chair me-1"></i>Cupos disponibles: ${course.available_spots}</div>
+                                ${course.homeroom_teacher ? `<div><i class="fas fa-user-tie me-1"></i>Director: ${course.homeroom_teacher}</div>` : ''}
+                            </div>
+                            
+                            <div class="progress mb-2" style="height: 6px;">
+                                <div class="progress-bar bg-info" 
+                                     style="width: ${(course.current_students_count / course.max_students) * 100}%"></div>
+                            </div>
+                            
+                            <div class="btn-group w-100" role="group">
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="editCourse(${course.id})" title="Editar curso">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" 
+                                        onclick="viewCourseDetails(${course.id})" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick="deleteCourse(${course.id}, '${course.grade_name} - ${course.section}')"
+                                        title="Eliminar curso" ${course.current_students_count > 0 ? 'disabled' : ''}>
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    content.innerHTML = html;
+}
+
+function createCourse() {
+    openCourseModal();
+}
+
+function editCourse(id) {
+    // Obtener datos del curso y mostrar modal para editar
+    fetch(`/academics_extended/api/courses/${id}/`)
+        .then(response => response.json())
+        .then(course => {
+            const modal = new bootstrap.Modal(document.getElementById('courseModal'));
+            document.getElementById('courseModalTitle').textContent = 'Editar Curso';
+            document.getElementById('courseId').value = course.id;
+            document.getElementById('courseGrade').value = course.grade_id;
+            document.getElementById('courseSection').value = course.section;
+            document.getElementById('courseMaxStudents').value = course.max_students;
+            document.getElementById('courseHomeroomTeacher').value = course.homeroom_teacher || '';
+            document.getElementById('courseIsActive').checked = course.is_active;
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al cargar el curso', 'error');
+        });
+}
+
+function deleteCourse(id, courseName) {
+    if (confirm(`¿Está seguro de que desea eliminar el curso "${courseName}"?`)) {
+        fetch(`/academics_extended/api/courses/${id}/`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                showNotification('Curso eliminado exitosamente', 'success');
+                loadCourses(); // Recargar la lista
+            } else {
+                throw new Error('Error al eliminar el curso');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al eliminar el curso', 'error');
+        });
+    }
+}
+
+function viewCourseDetails(id) {
+    // Mostrar detalles del curso en un modal
+    fetch(`/academics_extended/api/courses/${id}/`)
+        .then(response => response.json())
+        .then(course => {
+            showNotification(`Detalles del curso: ${course.grade_name} - ${course.section}`, 'info');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al cargar detalles del curso', 'error');
+        });
+}
+
+function editCourse(courseId) {
+    openCourseModal(courseId);
+}
+
+function openCourseModal(courseId = null) {
+    const modal = new bootstrap.Modal(document.getElementById('courseModal'));
+    const form = document.getElementById('courseForm');
+    const modalTitle = document.getElementById('courseModalLabel');
+    
+    // Limpiar formulario
+    form.reset();
+    document.getElementById('courseIsActive').checked = true;
+    
+    // Cargar datos para los selectores
+    loadGradeOptions();
+    loadAcademicYearOptions();
+    
+    if (courseId) {
+        // Modo edición
+        modalTitle.textContent = 'Editar Curso';
+        document.getElementById('courseId').value = courseId;
+        
+        // Cargar datos del curso
+        loadCourseData(courseId);
+    } else {
+        // Modo creación
+        modalTitle.textContent = 'Nuevo Curso';
+        document.getElementById('courseId').value = '';
+    }
+    
+    modal.show();
+}
+
+function loadGradeOptions() {
+    fetch('/academics_extended/api/grades/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const select = document.getElementById('courseGrade');
+                select.innerHTML = '<option value="">Seleccione un grado</option>';
+                
+                data.grades.forEach(grade => {
+                    select.innerHTML += `<option value="${grade.id}">${grade.name}</option>`;
+                });
+            }
+        })
+        .catch(error => console.error('Error loading grades:', error));
+}
+
+function loadAcademicYearOptions() {
+    fetch('/academics_extended/api/academic-years/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const select = document.getElementById('courseAcademicYear');
+                select.innerHTML = '<option value="">Seleccione un año académico</option>';
+                
+                data.academic_years.forEach(year => {
+                    const selected = year.is_current ? 'selected' : '';
+                    select.innerHTML += `<option value="${year.id}" ${selected}>${year.name}</option>`;
+                });
+            }
+        })
+        .catch(error => console.error('Error loading academic years:', error));
+}
+
+function loadCourseData(courseId) {
+    // Esta función cargaría los datos específicos del curso para edición
+    // Por ahora, implementaremos una versión básica
+    fetch(`/academics_extended/api/courses/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const course = data.courses.find(c => c.id === courseId);
+                if (course) {
+                    document.getElementById('courseGrade').value = course.grade_id;
+                    document.getElementById('courseSection').value = course.section;
+                    document.getElementById('courseAcademicYear').value = course.academic_year_id;
+                    document.getElementById('courseMaxStudents').value = course.max_students;
+                    document.getElementById('courseIsActive').checked = course.is_active;
+                }
+            }
+        })
+        .catch(error => console.error('Error loading course data:', error));
+}
+
+function saveCourse(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('courseForm');
+    const formData = new FormData(form);
+    const courseId = formData.get('id');
+    
+    const data = {
+        grade_id: parseInt(formData.get('grade_id')),
+        section: formData.get('section').trim(),
+        academic_year_id: parseInt(formData.get('academic_year_id')),
+        max_students: parseInt(formData.get('max_students')),
+        is_active: formData.get('is_active') === 'on'
+    };
+    
+    // Validaciones básicas
+    if (!data.grade_id || !data.section || !data.academic_year_id) {
+        showAlert('warning', 'Por favor complete todos los campos requeridos');
+        return;
+    }
+    
+    if (data.max_students < 10 || data.max_students > 50) {
+        showAlert('warning', 'El número máximo de estudiantes debe estar entre 10 y 50');
+        return;
+    }
+    
+    const url = courseId ? 
+        `/academics_extended/api/courses/${courseId}/update/` : 
+        '/academics_extended/api/courses/create/';
+    
+    const method = courseId ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showAlert('success', data.message);
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('courseModal'));
+            modal.hide();
+            
+            // Recargar lista de cursos
+            loadCourses();
+        } else {
+            showAlert('error', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Error de conexión al guardar el curso');
+    });
+}
+
+function deleteCourse(courseId, courseName) {
+    if (!confirm(`¿Está seguro de eliminar el curso "${courseName}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    fetch(`/academics_extended/api/courses/${courseId}/delete/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showAlert('success', data.message);
+            loadCourses();
+        } else {
+            showAlert('error', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Error de conexión al eliminar el curso');
+    });
+}
+
+function viewCourseDetails(courseId) {
+    // Función para ver detalles completos del curso
+    // Se implementará en futuras iteraciones
+    showAlert('info', 'Vista de detalles del curso - Por implementar');
+}
+
+// ================== Funciones de Notificaciones ==================
+
+function showNotification(message, type = 'info') {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${getAlertClass(type)} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    
+    notification.innerHTML = `
+        <i class="fas fa-${getAlertIcon(type)} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Agregar al DOM
+    document.body.appendChild(notification);
+    
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+function getAlertClass(type) {
+    const classes = {
+        'success': 'success',
+        'error': 'danger',
+        'warning': 'warning',
+        'info': 'info'
+    };
+    return classes[type] || 'info';
+}
+
+function getAlertIcon(type) {
+    const icons = {
+        'success': 'check-circle',
+        'error': 'exclamation-triangle',
+        'warning': 'exclamation-circle',
+        'info': 'info-circle'
+    };
+    return icons[type] || 'info-circle';
+}
+
+
+</script>
+
+<style>
+.border-left-primary { border-left: 0.25rem solid #4e73df !important; }
+.border-left-success { border-left: 0.25rem solid #1cc88a !important; }
+.border-left-info { border-left: 0.25rem solid #36b9cc !important; }
+.border-left-warning { border-left: 0.25rem solid #f6c23e !important; }
+.border-left-secondary { border-left: 0.25rem solid #858796 !important; }
+.border-left-dark { border-left: 0.25rem solid #5a5c69 !important; }
+</style>
+{% endblock %}

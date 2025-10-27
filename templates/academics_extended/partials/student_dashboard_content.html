@@ -1,0 +1,288 @@
+<!-- Dashboard para Estudiantes -->
+{% if student_profile %}
+<div class="row">
+    <!-- Estadísticas del estudiante -->
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ my_course.grade.name|default:"-" }}</div>
+                    <div class="stats-label">Mi Grado</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ general_average|floatformat:1|default:"0.0" }}</div>
+                    <div class="stats-label">Promedio General</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ attendance_percentage|floatformat:0|default:"100" }}%</div>
+                    <div class="stats-label">Asistencia</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ my_subjects.count }}</div>
+                    <div class="stats-label">Materias</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información académica del estudiante -->
+    <div class="col-lg-4">
+        <div class="recent-activity">
+            <h5 class="mb-3"><i class="fas fa-user-graduate"></i> Mi Información Académica</h5>
+            
+            <div class="activity-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ student_profile.user.get_full_name }}</strong>
+                        <br>
+                        <small class="text-muted">ID: {{ student_profile.student_id }}</small>
+                    </div>
+                    <span class="role-badge bg-primary text-white">Estudiante</span>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Curso Actual</strong>
+                        <br>
+                        <small class="text-muted">{{ my_course|default:"No asignado" }}</small>
+                    </div>
+                    <span class="role-badge">{{ current_academic_year.name }}</span>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Fecha de Ingreso</strong>
+                        <br>
+                        <small class="text-muted">{{ student_profile.enrollment_date|date:"d/m/Y" }}</small>
+                    </div>
+                    <span class="role-badge bg-success text-white">{{ student_profile.get_status_display }}</span>
+                </div>
+            </div>
+            
+            {% if student_profile.guardian_name %}
+            <div class="activity-item">
+                <h6><i class="fas fa-user-friends"></i> Acudiente</h6>
+                <div>
+                    <strong>{{ student_profile.guardian_name }}</strong>
+                    <br>
+                    <small class="text-muted">{{ student_profile.guardian_relationship }}</small>
+                    <br>
+                    <small class="text-muted">
+                        <i class="fas fa-phone"></i> {{ student_profile.guardian_phone }}
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Rendimiento académico -->
+    <div class="col-lg-4">
+        <div class="recent-activity">
+            <h5 class="mb-3"><i class="fas fa-chart-line"></i> Rendimiento Académico</h5>
+            
+            {% if best_subject %}
+            <div class="activity-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong style="color: var(--labalsa-green);">{{ best_subject.0 }}</strong>
+                        <br>
+                        <small class="text-muted">Mejor rendimiento</small>
+                    </div>
+                    <span class="role-badge bg-success text-white">{{ best_subject.1|floatformat:1 }}</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if worst_subject %}
+            <div class="activity-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong style="color: orange;">{{ worst_subject.0 }}</strong>
+                        <br>
+                        <small class="text-muted">Necesita mejorar</small>
+                    </div>
+                    <span class="role-badge bg-warning text-white">{{ worst_subject.1|floatformat:1 }}</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="activity-item">
+                <h6><i class="fas fa-calculator"></i> Estadísticas Generales</h6>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <strong>{{ grade_count }}</strong>
+                        <br>
+                        <small class="text-muted">Calificaciones</small>
+                    </div>
+                    <div class="col-6">
+                        <strong>{{ my_subjects.count }}</strong>
+                        <br>
+                        <small class="text-muted">Materias</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <h6><i class="fas fa-clipboard-list"></i> Asistencia Detallada</h6>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <strong style="color: green;">{{ attendance_stats.present }}</strong>
+                        <br>
+                        <small class="text-muted">Presente</small>
+                    </div>
+                    <div class="col-4">
+                        <strong style="color: orange;">{{ attendance_stats.late }}</strong>
+                        <br>
+                        <small class="text-muted">Tardanza</small>
+                    </div>
+                    <div class="col-4">
+                        <strong style="color: red;">{{ attendance_stats.absent }}</strong>
+                        <br>
+                        <small class="text-muted">Ausente</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Calificaciones recientes -->
+    <div class="col-lg-4">
+        <div class="recent-activity">
+            <h5 class="mb-3"><i class="fas fa-star"></i> Calificaciones Recientes</h5>
+            {% if recent_grades %}
+                {% for grade in recent_grades %}
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ grade.subject.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ grade.activity_name }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="role-badge 
+                                    {% if grade.percentage >= 70 %}bg-success{% elif grade.percentage >= 60 %}bg-warning{% else %}bg-danger{% endif %} text-white">
+                                    {{ grade.grade_value }}/{{ grade.max_value }}
+                                </span>
+                                <br>
+                                <small class="text-muted">{{ grade.date_recorded|date:"d/m/Y" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No hay calificaciones registradas</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Materias y acciones -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="recent-activity">
+            <h5 class="mb-3"><i class="fas fa-book"></i> Mis Materias con Profesores</h5>
+            {% if my_assignments %}
+                <div class="row">
+                    {% for assignment in my_assignments %}
+                        <div class="col-md-6 mb-3">
+                            <div class="activity-item border rounded p-3" style="background: #f8f9fa;">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <strong style="color: var(--labalsa-dark-green);">{{ assignment.subject.name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ assignment.subject.get_area_display }}</small>
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="fas fa-user-tie"></i> Prof. {{ assignment.teacher.get_full_name }}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="role-badge">{{ assignment.subject.hours_per_week }}h/sem</span>
+                                        {% if subject_averages %}
+                                            {% for subject_name, avg in subject_averages.items %}
+                                                {% if subject_name == assignment.subject.name %}
+                                                    <br>
+                                                    <span class="role-badge 
+                                                        {% if avg >= 70 %}bg-success{% elif avg >= 60 %}bg-warning{% else %}bg-danger{% endif %} text-white mt-1">
+                                                        Prom: {{ avg|floatformat:1 }}
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No hay materias asignadas</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="quick-actions">
+            <h5 class="mb-3"><i class="fas fa-bolt"></i> Acciones Rápidas</h5>
+            <a href="{% url 'academics_extended:student_subjects' %}" class="action-btn">
+                <i class="fas fa-book"></i> Mis Materias
+            </a>
+            <a href="{% url 'academics_extended:student_grades' %}" class="action-btn">
+                <i class="fas fa-star"></i> Calificaciones
+            </a>
+            <a href="{% url 'academics_extended:student_schedule' %}" class="action-btn">
+                <i class="fas fa-calendar"></i> Horario
+            </a>
+            <a href="{% url 'authentication:profile' %}" class="action-btn">
+                <i class="fas fa-user"></i> Mi Perfil
+            </a>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="alert alert-warning">
+    <h5><i class="fas fa-exclamation-triangle"></i> Perfil Incompleto</h5>
+    <p>Tu perfil de estudiante no está completamente configurado. Contacta a la secretaría académica para completar tu información.</p>
+</div>
+{% endif %}

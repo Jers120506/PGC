@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mis Cursos - Sistema Académico{% endblock %}
+
+{% block extra_css %}
+<style>
+    .course-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        transition: all 0.3s ease;
+    }
+    
+    .course-card:hover {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .course-header {
+        border-bottom: 2px solid #28a745;
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .grade-badge {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 50px;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+    
+    .student-count {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+    }
+    
+    .homeroom-teacher {
+        color: #6c757d;
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-school text-success"></i> Mis Cursos</h2>
+                    <p class="text-muted">Cursos donde tienes asignaciones académicas</p>
+                </div>
+                <a href="{% url 'academics_extended:dashboard' %}" class="btn btn-outline-success">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </a>
+            </div>
+
+            {% if courses %}
+                <div class="row">
+                    {% for course in courses %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="course-card">
+                            <div class="course-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="grade-badge">{{ course.grade.name }}</span>
+                                    <h5 class="mb-0">Sección {{ course.section }}</h5>
+                                </div>
+                            </div>
+                            
+                            <div class="course-info">
+                                <div class="student-count mb-3">
+                                    <i class="fas fa-users text-success"></i>
+                                    <strong>{{ course.student_count }}</strong> estudiantes
+                                </div>
+                                
+                                {% if course.homeroom_teacher %}
+                                <div class="homeroom-teacher">
+                                    <i class="fas fa-user-tie"></i> 
+                                    Director: {{ course.homeroom_teacher.get_full_name }}
+                                </div>
+                                {% endif %}
+                                
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar"></i> 
+                                        {{ course.academic_year.name }}
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3 text-center">
+                                <a href="{% url 'academics_extended:teacher_students' %}" 
+                                   class="btn btn-success btn-sm">
+                                    <i class="fas fa-users"></i> Ver Estudiantes
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    No tienes cursos asignados actualmente.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

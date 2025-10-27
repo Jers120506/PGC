@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mis Cursos - Institución Educativa La Balsa{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/labalsa_styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="school-header text-center fade-in">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <img src="{% static 'images/ESCUDO-IE-LA-BALSA.png' %}" alt="Escudo Institución Educativa La Balsa" 
+                     class="school-shield">
+            </div>
+            <div class="col-md-8">
+                <h2 class="mb-1">Institución Educativa La Balsa</h2>
+                <p class="mb-1">Córdoba - Colombia</p>
+                <h4 class="mb-0">Mis Cursos</h4>
+            </div>
+            <div class="col-md-2 text-end">
+                <span class="badge bg-light text-dark">{{ user.get_full_name }}</span><br>
+                <small>Profesor</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        {% if courses %}
+            {% for course in courses %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 fade-in">
+                    <div class="card-header bg-success" style="background: linear-gradient(135deg, #3CB371, #2E8B57) !important;">
+                        <h6 class="mb-0" style="color: white !important; font-weight: 700 !important;">{{ course.subject.name }}</h6>
+                        <small style="color: rgba(255,255,255,0.9) !important;">{{ course.grade.name }} {{ course.section }}</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center mb-3">
+                            <div class="col-6">
+                                <div class="border-end">
+                                    <h4 class="text-primary mb-0">{{ course.students.count }}</h4>
+                                    <small class="text-muted">Estudiantes</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <h4 class="text-success mb-0">{{ course.get_average_grade|floatformat:1|default:"--" }}</h4>
+                                <small class="text-muted">Promedio</small>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'academics:attendance_form' course.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-list-check"></i> Tomar Asistencia
+                            </a>
+                            <a href="{% url 'academics:grades_form' course.id %}" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-pencil-square"></i> Registrar Notas
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> Año {{ course.academic_year.name }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center text-muted">
+                    <i class="bi bi-book fa-3x mb-3"></i>
+                    <h5>No tienes cursos asignados</h5>
+                    <p>Los cursos aparecerán aquí cuando sean asignados por la administración.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

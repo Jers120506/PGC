@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tomar Asistencia - Sistema Académico{% endblock %}
+
+{% block extra_css %}
+<style>
+    .attendance-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    
+    .course-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .course-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .student-row {
+        padding: 10px 15px;
+        border-bottom: 1px solid #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .student-row:last-child {
+        border-bottom: none;
+    }
+    
+    .student-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+    
+    .attendance-controls {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-attendance {
+        border-radius: 20px;
+        padding: 8px 20px;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-present {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+    
+    .btn-present:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    .btn-absent {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+    }
+    
+    .btn-absent:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    }
+    
+    .btn-late {
+        background: linear-gradient(135deg, #ffc107, #e0a800);
+        color: #212529;
+    }
+    
+    .btn-late:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    }
+    
+    .recent-attendance {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .attendance-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .attendance-item:last-child {
+        border-bottom: none;
+    }
+    
+    .status-badge {
+        border-radius: 12px;
+        padding: 4px 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-present {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-absent {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-late {
+        background: #fff3cd;
+        color: #856404;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Encabezado -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-success mb-0">
+                    <i class="fas fa-check-square"></i> Tomar Asistencia
+                </h2>
+                <span class="badge bg-success fs-6">
+                    {{ teacher_assignments.count }} curso{{ teacher_assignments.count|pluralize }}
+                </span>
+            </div>
+
+            {% if teacher_assignments %}
+                <div class="row">
+                    <div class="col-lg-8">
+                        <!-- Cursos asignados -->
+                        {% for course, students in courses_with_students.items %}
+                            <div class="course-card">
+                                <div class="course-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-users"></i>
+                                        {{ course.grade.name }} {{ course.section }}
+                                    </h5>
+                                    <small>{{ students.count }} estudiante{{ students.count|pluralize }}</small>
+                                </div>
+                                
+                                <div class="course-body">
+                                    {% for student in students %}
+                                        <div class="student-row">
+                                            <div class="student-info">
+                                                <div class="student-avatar">
+                                                    {{ student.user.first_name.0|upper }}{{ student.user.last_name.0|upper }}
+                                                </div>
+                                                <div>
+                                                    <strong>{{ student.user.get_full_name }}</strong><br>
+                                                    <small class="text-muted">{{ student.student_id }}</small>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="attendance-controls">
+                                                <button class="btn btn-attendance btn-present" 
+                                                        onclick="markAttendance({{ student.id }}, 'present')">
+                                                    <i class="fas fa-check"></i> Presente
+                                                </button>
+                                                <button class="btn btn-attendance btn-late" 
+                                                        onclick="markAttendance({{ student.id }}, 'late')">
+                                                    <i class="fas fa-clock"></i> Tardanza
+                                                </button>
+                                                <button class="btn btn-attendance btn-absent" 
+                                                        onclick="markAttendance({{ student.id }}, 'absent')">
+                                                    <i class="fas fa-times"></i> Ausente
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <!-- Asistencia reciente -->
+                        <div class="attendance-container">
+                            <h5 class="text-success mb-3">
+                                <i class="fas fa-history"></i> Asistencia Reciente
+                            </h5>
+                            
+                            <div class="recent-attendance">
+                                {% for attendance in recent_attendance %}
+                                    <div class="attendance-item">
+                                        <div>
+                                            <strong>{{ attendance.student.user.get_full_name }}</strong><br>
+                                            <small class="text-muted">
+                                                {{ attendance.date|date:"d/m/Y" }} - 
+                                                {{ attendance.student.course.grade.name }} {{ attendance.student.course.section }}
+                                            </small>
+                                        </div>
+                                        <span class="status-badge status-{{ attendance.status }}">
+                                            {% if attendance.status == 'present' %}
+                                                Presente
+                                            {% elif attendance.status == 'absent' %}
+                                                Ausente
+                                            {% elif attendance.status == 'late' %}
+                                                Tardanza
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-muted text-center">No hay registros recientes</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-5x text-muted mb-4"></i>
+                    <h3 class="text-muted mb-3">No tienes cursos asignados</h3>
+                    <p class="text-muted fs-5">
+                        Contacta al coordinador académico para obtener tus asignaciones.
+                    </p>
+                    <a href="{% url 'academics_extended:dashboard' %}" class="btn btn-success mt-3">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Script para manejar asistencia -->
+<script>
+function markAttendance(studentId, status) {
+    // Aquí se implementaría la lógica AJAX para guardar la asistencia
+    const statusNames = {
+        'present': 'Presente',
+        'absent': 'Ausente', 
+        'late': 'Tardanza'
+    };
+    
+    // Mostrar confirmación visual
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    button.disabled = true;
+    
+    // Simular guardado (aquí se haría la petición AJAX real)
+    setTimeout(() => {
+        button.innerHTML = '<i class="fas fa-check"></i> ' + statusNames[status];
+        
+        // Restaurar después de 2 segundos
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }, 2000);
+    }, 1000);
+    
+    console.log(`Marcando asistencia: Estudiante ${studentId} como ${status}`);
+}
+
+// Funciones para marcar asistencia masiva
+function markAllPresent(courseId) {
+    if (confirm('¿Marcar a todos los estudiantes como presentes?')) {
+        // Implementar lógica AJAX
+        console.log(`Marcando todos presente en curso ${courseId}`);
+    }
+}
+
+function markAllAbsent(courseId) {
+    if (confirm('¿Marcar a todos los estudiantes como ausentes?')) {
+        // Implementar lógica AJAX
+        console.log(`Marcando todos ausente en curso ${courseId}`);
+    }
+}
+</script>
+{% endblock %}

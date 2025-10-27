@@ -1,0 +1,714 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Usuarios y Estudiantes - Administración{% endblock %}
+
+{% block extra_css %}
+<style>
+.user-card {
+    transition: transform 0.2s ease-in-out;
+    border-left: 3px solid transparent;
+}
+
+.user-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.user-card.admin {
+    border-left-color: #dc3545;
+}
+
+.user-card.teacher {
+    border-left-color: #28a745;
+}
+
+.user-card.secretary {
+    border-left-color: #ffc107;
+}
+
+.user-card.student {
+    border-left-color: #007bff;
+}
+
+.role-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="card-title mb-0">
+                                <i class="fas fa-users-cog me-2"></i>
+                                Gestión de Usuarios y Estudiantes
+                            </h1>
+                            <p class="card-text mb-0">
+                                Administración completa del personal y estudiantes del colegio
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'administration:dashboard' %}" class="btn btn-light">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Volver al Panel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación por pestañas -->
+    <ul class="nav nav-tabs mb-4" id="userTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="all-users-tab" data-bs-toggle="tab" data-bs-target="#all-users" type="button" role="tab">
+                <i class="fas fa-users me-2"></i>Todos los Usuarios
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="staff-tab" data-bs-toggle="tab" data-bs-target="#staff" type="button" role="tab">
+                <i class="fas fa-user-tie me-2"></i>Personal
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab">
+                <i class="fas fa-graduation-cap me-2"></i>Estudiantes
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenido de pestañas -->
+    <div class="tab-content" id="userTabsContent">
+        
+        <!-- Pestaña: Todos los Usuarios -->
+        <div class="tab-pane fade show active" id="all-users" role="tabpanel">
+            <!-- Estadísticas Generales -->
+            <div class="row mb-4">
+                {% for role_stat in users_by_role %}
+                <div class="col-xl-3 col-md-6 mb-3">
+                    <div class="card border-left-primary h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        {% if role_stat.role == 'admin' %}Administradores
+                                        {% elif role_stat.role == 'secretary' %}Secretarios
+                                        {% elif role_stat.role == 'teacher' %}Profesores
+                                        {% elif role_stat.role == 'student' %}Estudiantes
+                                        {% else %}{{ role_stat.role|title }}
+                                        {% endif %}
+                                    </div>
+                            <div class="h5 mb-0">{{ role_stat.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            {% if role_stat.role == 'admin' %}
+                                <i class="fas fa-user-shield fa-2x text-gray-300"></i>
+                            {% elif role_stat.role == 'secretary' %}
+                                <i class="fas fa-user-tie fa-2x text-gray-300"></i>
+                            {% elif role_stat.role == 'teacher' %}
+                                <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                            {% else %}
+                                <i class="fas fa-user fa-2x text-gray-300"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Usuarios Recientes
+                            </div>
+                            <div class="h5 mb-0">{{ recent_users }}</div>
+                            <small class="text-muted">Últimos 30 días</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-plus fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tools me-2"></i>
+                        Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <button onclick="createNewUser()" class="btn btn-success btn-lg w-100">
+                                <i class="fas fa-user-plus me-2"></i>
+                                Crear Nuevo Usuario
+                            </button>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'administration:profile_management' %}" class="btn btn-info btn-lg w-100">
+                                <i class="fas fa-id-badge me-2"></i>
+                                Gestionar Perfiles
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'administration:group_management' %}" class="btn btn-warning btn-lg w-100">
+                                <i class="fas fa-users me-2"></i>
+                                Gestionar Grupos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Todos los Usuarios -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-list me-2"></i>
+                        Todos los Usuarios del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Último Acceso</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in all_users %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ user.username }}</strong>
+                                        {% if user.is_superuser %}
+                                            <span class="badge bg-danger">Superusuario</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.first_name }} {{ user.last_name }}</td>
+                                    <td>{{ user.email|default:"No especificado" }}</td>
+                                    <td>
+                                        {% if user.profile %}
+                                            {% if user.profile.role == 'admin' %}
+                                                <span class="badge bg-primary">Administrador</span>
+                                            {% elif user.profile.role == 'secretary' %}
+                                                <span class="badge bg-info">Secretario</span>
+                                            {% elif user.profile.role == 'teacher' %}
+                                                <span class="badge bg-success">Profesor</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ user.profile.role|title }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-warning">Sin perfil</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.last_login %}
+                                            {{ user.last_login|date:"d/m/Y H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">Nunca</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.is_active %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <!-- DEBUG INFO -->
+                                        <small class="text-muted">DEBUG: {{ user.username }} - Super: {{ user.is_superuser }} - Role: {% if user.profile %}{{ user.profile.role }}{% else %}No Profile{% endif %}</small><br>
+                                        
+                                        <div class="btn-group" role="group">
+                                            <!-- Botón Editar - Siempre visible -->
+                                            <button class="btn btn-sm btn-outline-primary" 
+                                                    title="Editar Usuario"
+                                                    onclick="editUser({{ user.id }}, '{{ user.username }}', '{{ user.first_name }}', '{{ user.last_name }}', '{{ user.email }}', '{% if user.profile %}{{ user.profile.role }}{% endif %}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            
+                                            <!-- Botón Activar/Desactivar - No para superusuarios -->
+                                            {% if not user.is_superuser %}
+                                            <button class="btn btn-sm btn-outline-{% if user.is_active %}warning{% else %}success{% endif %}" 
+                                                    title="{% if user.is_active %}Desactivar{% else %}Activar{% endif %}"
+                                                    onclick="toggleUserStatus({{ user.id }}, '{{ user.username }}', {{ user.is_active|yesno:'true,false' }})">
+                                                {% if user.is_active %}
+                                                    <i class="fas fa-user-slash"></i>
+                                                {% else %}
+                                                    <i class="fas fa-user-check"></i>
+                                                {% endif %}
+                                            </button>
+                                            {% endif %}
+                                            
+                                            <!-- Botón Resetear Contraseña - Siempre visible -->
+                                            <button class="btn btn-sm btn-outline-info" 
+                                                    title="Resetear Contraseña"
+                                                    onclick="resetPassword({{ user.id }}, '{{ user.username }}')">
+                                                <i class="fas fa-key"></i>
+                                            </button>
+                                            
+                                            <!-- Botón Eliminar - Solo para no-admins y no-superusers -->
+                                            {% if not user.is_superuser and user.profile and user.profile.role != 'admin' %}
+                                            <button class="btn btn-sm btn-outline-danger" 
+                                                    title="Eliminar Usuario"
+                                                    onclick="deleteUser({{ user.id }}, '{{ user.username }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No hay usuarios registrados.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Usuario -->
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalLabel">
+                    <i class="fas fa-user-plus me-2"></i>
+                    <span id="modalTitle">Crear Nuevo Usuario</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalUsername" class="form-label">Nombre de Usuario <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="modalUsername" required>
+                            <div class="form-text">Único en el sistema, sin espacios ni caracteres especiales</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalEmail" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="modalEmail" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalFirstName" class="form-label">Nombre <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="modalFirstName" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalLastName" class="form-label">Apellido <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="modalLastName" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalRole" class="form-label">Rol <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modalRole" required>
+                                <option value="">Seleccionar rol...</option>
+                                <option value="admin">👤 Administrador</option>
+                                <option value="secretary">👩‍💼 Secretario</option>
+                                <option value="teacher">👨‍🏫 Profesor</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3" id="passwordField">
+                            <label for="modalPassword" class="form-label">Contraseña <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="modalPassword">
+                            <div class="form-text">Mínimo 6 caracteres</div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Información:</strong> El usuario recibirá sus credenciales y deberá cambiar su contraseña en el primer acceso.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-success" id="saveUserBtn" onclick="saveUser()">
+                    <i class="fas fa-save me-1"></i>
+                    <span id="saveButtonText">Crear Usuario</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Función para obtener el token CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Obtener el token CSRF desde el DOM si está disponible
+function getCSRFToken() {
+    // Primero intentar desde meta tag
+    let token = document.querySelector('meta[name="csrf-token"]');
+    if (token) {
+        return token.getAttribute('content');
+    }
+    
+    // Luego desde input hidden
+    token = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (token) {
+        return token.value;
+    }
+    
+    // Finalmente desde cookie
+    token = getCookie('csrftoken');
+    if (token) {
+        return token;
+    }
+    
+    console.error('No se pudo encontrar el token CSRF');
+    return null;
+}
+
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Función para activar/desactivar usuario
+function toggleUserStatus(userId, username, isActive) {
+    const action = isActive ? 'desactivar' : 'activar';
+    const message = `¿Está seguro que desea ${action} al usuario "${username}"?`;
+    
+    if (confirm(message)) {
+        fetch("{% url 'administration:toggle_user_status_api' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                'user_id': userId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload(); // Recargar para ver cambios
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión. Inténtelo nuevamente.');
+        });
+    }
+}
+
+// Función para eliminar usuario
+function deleteUser(userId, username) {
+    const message = `⚠️ ATENCIÓN ⚠️\n\n¿Está completamente seguro de eliminar al usuario "${username}"?\n\nEsta acción NO se puede deshacer.`;
+    
+    if (confirm(message)) {
+        if (confirm('Última confirmación: ¿Eliminar usuario definitivamente?')) {
+            fetch("{% url 'administration:delete_user_api' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({
+                    'user_id': userId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error de conexión. Inténtelo nuevamente.');
+            });
+        }
+    }
+}
+
+// Función para resetear contraseña
+function resetPassword(userId, username) {
+    const message = `¿Resetear la contraseña del usuario "${username}"?\n\nSe asignará una contraseña temporal.`;
+    
+    if (confirm(message)) {
+        fetch("{% url 'administration:reset_password_api' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                'user_id': userId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`${data.message}\n\nContraseña temporal: ${data.temp_password}\n\n⚠️ Anote esta contraseña y entréguela al usuario.`);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión. Inténtelo nuevamente.');
+        });
+    }
+}
+
+// Variables para el modal de edición
+let editingUserId = null;
+let isEditing = false;
+
+// Función para abrir modal de creación
+function createNewUser() {
+    isEditing = false;
+    editingUserId = null;
+    
+    // Limpiar formulario
+    document.getElementById('userForm').reset();
+    
+    // Configurar modal para creación
+    document.getElementById('modalTitle').textContent = 'Crear Nuevo Usuario';
+    document.getElementById('saveButtonText').textContent = 'Crear Usuario';
+    document.getElementById('passwordField').style.display = 'block';
+    document.getElementById('modalPassword').required = true;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('userModal'));
+    modal.show();
+}
+
+// Función para abrir modal de edición
+function editUser(userId, username, firstName, lastName, email, role) {
+    isEditing = true;
+    editingUserId = userId;
+    
+    // Llenar el formulario con los datos actuales
+    document.getElementById('modalUsername').value = username;
+    document.getElementById('modalFirstName').value = firstName;
+    document.getElementById('modalLastName').value = lastName;
+    document.getElementById('modalEmail').value = email;
+    document.getElementById('modalRole').value = role;
+    
+    // Configurar modal para edición
+    document.getElementById('modalTitle').textContent = 'Editar Usuario';
+    document.getElementById('saveButtonText').textContent = 'Guardar Cambios';
+    document.getElementById('passwordField').style.display = 'none';
+    document.getElementById('modalPassword').required = false;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('userModal'));
+    modal.show();
+}
+
+// Función para guardar usuario (crear o editar)
+function saveUser() {
+    const username = document.getElementById('modalUsername').value.trim();
+    const email = document.getElementById('modalEmail').value.trim();
+    const firstName = document.getElementById('modalFirstName').value.trim();
+    const lastName = document.getElementById('modalLastName').value.trim();
+    const role = document.getElementById('modalRole').value;
+    const password = document.getElementById('modalPassword').value;
+    
+    // Validaciones en el frontend
+    if (!username || !email || !firstName || !lastName || !role) {
+        alert('Por favor complete todos los campos obligatorios.');
+        return;
+    }
+    
+    if (!isEditing && !password) {
+        alert('La contraseña es obligatoria para nuevos usuarios.');
+        return;
+    }
+    
+    if (password && password.length < 6) {
+        alert('La contraseña debe tener al menos 6 caracteres.');
+        return;
+    }
+    
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('Por favor ingrese un email válido.');
+        return;
+    }
+    
+    // Validar username (solo letras, números, guiones y guiones bajos)
+    const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!usernameRegex.test(username)) {
+        alert('El nombre de usuario solo puede contener letras, números, guiones (-) y guiones bajos (_).');
+        return;
+    }
+    
+    // Preparar datos
+    const userData = {
+        'username': username,
+        'email': email,
+        'first_name': firstName,
+        'last_name': lastName,
+        'role': role
+    };
+    
+    if (!isEditing) {
+        userData.password = password;
+    }
+    
+    // Enviar petición
+    const url = isEditing ? "{% url 'administration:update_user_api' %}" : "{% url 'administration:create_user_api' %}";
+    
+    if (isEditing) {
+        userData.user_id = editingUserId;
+    }
+    
+    // Deshabilitar botón mientras se procesa
+    const saveBtn = document.getElementById('saveUserBtn');
+    const originalText = document.getElementById('saveButtonText').textContent;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Procesando...';
+    
+    console.log('Enviando datos:', userData);
+    console.log('URL:', url);
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(userData)
+    })
+    .then(response => {
+        console.log('Respuesta del servidor:', response);
+        console.log('Status:', response.status);
+        console.log('Headers:', response.headers);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos recibidos:', data);
+        
+        if (data.success) {
+            alert(data.message);
+            // Cerrar modal
+            bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+            // Recargar página
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error completo:', error);
+        console.error('Stack trace:', error.stack);
+        
+        if (error.message.includes('Failed to fetch')) {
+            alert('Error de conexión: No se pudo conectar con el servidor. Verifique que el servidor esté funcionando.');
+        } else if (error.message.includes('HTTP error')) {
+            alert('Error del servidor: ' + error.message + '. Verifique los logs del servidor.');
+        } else {
+            alert('Error inesperado: ' + error.message);
+        }
+    })
+    .finally(() => {
+        // Rehabilitar botón
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>' + originalText;
+    });
+}
+
+// Inicializar DataTable si está disponible
+$(document).ready(function() {
+    if (typeof $.fn.DataTable !== 'undefined') {
+        $('#usersTable').DataTable({
+            "pageLength": 25,
+            "order": [[ 4, "desc" ]],
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+</style>
+{% endblock %}

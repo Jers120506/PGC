@@ -1,0 +1,557 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Cursos - Sistema Académico{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 35px rgba(0,0,0,0.12);
+    }
+    
+    .stats-card.courses {
+        border-left: 4px solid #007bff;
+    }
+    
+    .stats-card.academic-year {
+        border-left: 4px solid #28a745;
+    }
+    
+    .course-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #007bff;
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .course-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 35px rgba(0,0,0,0.12);
+    }
+    
+    .course-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+    
+    .course-title {
+        color: #2c3e50;
+        font-weight: 700;
+        font-size: 1.4rem;
+        margin-bottom: 5px;
+    }
+    
+    .course-subtitle {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+    
+    .course-badge {
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-primary { background: #007bff; color: white; }
+    .badge-success { background: #28a745; color: white; }
+    .badge-warning { background: #ffc107; color: #212529; }
+    .badge-info { background: #17a2b8; color: white; }
+    
+    .course-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-item:hover {
+        background: #e9ecef;
+        border-color: #007bff;
+        transform: translateY(-2px);
+    }
+    
+    .stat-number {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .teacher-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    
+    .teacher-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #007bff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 12px;
+        border: 2px solid #e9ecef;
+    }
+    
+    .search-box {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 20px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .search-box:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    }
+    
+    .filter-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+    }
+    
+    .btn-action {
+        padding: 8px 15px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        margin-right: 8px;
+        border: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-view {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    
+    .btn-view:hover {
+        background: #0056b3;
+        border-color: #0056b3;
+        color: white;
+    }
+    
+    .btn-edit {
+        background: #ffc107;
+        color: #212529;
+        border-color: #ffc107;
+    }
+    
+    .btn-edit:hover {
+        background: #e0a800;
+        border-color: #d39e00;
+        color: #212529;
+    }
+    
+    .btn-students {
+        background: #28a745;
+        color: white;
+        border-color: #28a745;
+    }
+    
+    .btn-students:hover {
+        background: #1e7e34;
+        border-color: #1c7430;
+        color: white;
+    }
+    
+    .grade-group {
+        margin-bottom: 30px;
+    }
+    
+    .grade-header {
+        background: #007bff;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        font-weight: 600;
+        border: 1px solid #0056b3;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Encabezado -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-primary mb-0">
+                    <i class="fas fa-school"></i> Gestión de Cursos
+                </h2>
+                {% if can_manage_courses %}
+                    <button class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Crear Curso
+                    </button>
+                {% endif %}
+            </div>
+            
+            <!-- Estadísticas -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stats-card courses">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-school fa-2x text-primary"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-1 text-primary">{{ total_courses }}</h3>
+                                <small class="text-muted">Cursos Activos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="stats-card academic-year">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-calendar-alt fa-2x"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-1">
+                                    {% if current_academic_year %}
+                                        Año Académico {{ current_academic_year.name }}
+                                    {% else %}
+                                        Sin año académico configurado
+                                    {% endif %}
+                                </h4>
+                                <small>
+                                    {% if current_academic_year %}
+                                        {{ current_academic_year.start_date|date:"d/m/Y" }} - {{ current_academic_year.end_date|date:"d/m/Y" }}
+                                    {% else %}
+                                        Configure un año académico para gestionar cursos
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filtros y búsqueda -->
+            <div class="filter-card">
+                <div class="row">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control search-box" placeholder="🔍 Buscar cursos por grado, sección o profesor..." id="searchCourses">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="filterGrade">
+                            <option value="">Todos los grados</option>
+                            {% regroup courses by grade as grade_list %}
+                            {% for grade in grade_list %}
+                                <option value="{{ grade.grouper.name }}">{{ grade.grouper.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="sortBy">
+                            <option value="grade">Ordenar por grado</option>
+                            <option value="section">Ordenar por sección</option>
+                            <option value="students">Ordenar por estudiantes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lista de cursos -->
+            {% if courses %}
+                {% regroup courses by grade as grade_list %}
+                <div id="coursesList">
+                    {% for grade_group in grade_list %}
+                        <div class="grade-group">
+                            <div class="grade-header">
+                                <i class="fas fa-layer-group me-2"></i>
+                                {{ grade_group.grouper.name }}
+                                <span class="badge bg-light text-dark ms-2">{{ grade_group.list|length }} curso{{ grade_group.list|length|pluralize }}</span>
+                            </div>
+                            
+                            <div class="row">
+                                {% for course in grade_group.list %}
+                                    <div class="col-lg-6 col-xl-4 course-item" 
+                                         data-grade="{{ course.grade.name }}" 
+                                         data-section="{{ course.section }}"
+                                         data-students="{{ course.student_count }}"
+                                         data-teacher="{{ course.homeroom_teacher.get_full_name|default:'Sin profesor' }}">
+                                        <div class="course-card">
+                                            <div class="course-header">
+                                                <div>
+                                                    <h4 class="course-title">{{ course.grade.name }} {{ course.section }}</h4>
+                                                    <p class="course-subtitle">
+                                                        <i class="fas fa-calendar"></i> {{ course.academic_year.name }}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    {% if course.student_count >= 30 %}
+                                                        <span class="course-badge badge-warning">Lleno</span>
+                                                    {% elif course.student_count >= 20 %}
+                                                        <span class="course-badge badge-success">Activo</span>
+                                                    {% elif course.student_count >= 10 %}
+                                                        <span class="course-badge badge-info">Regular</span>
+                                                    {% else %}
+                                                        <span class="course-badge badge-primary">Nuevo</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Estadísticas del curso -->
+                                            <div class="course-stats">
+                                                <div class="stat-item">
+                                                    <div class="stat-number">{{ course.student_count }}</div>
+                                                    <div class="stat-label">Estudiantes</div>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <div class="stat-number">{{ course.grade.subjects.count|default:"0" }}</div>
+                                                    <div class="stat-label">Materias</div>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <div class="stat-number">{{ course.capacity|default:"35" }}</div>
+                                                    <div class="stat-label">Capacidad</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Información del profesor director -->
+                                            {% if course.homeroom_teacher %}
+                                                <div class="teacher-info">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="teacher-avatar">
+                                                            {{ course.homeroom_teacher.first_name.0|upper }}{{ course.homeroom_teacher.last_name.0|upper }}
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-bold">{{ course.homeroom_teacher.get_full_name }}</div>
+                                                            <small class="text-muted">Director de Grupo</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <div class="teacher-info">
+                                                    <div class="text-center text-muted">
+                                                        <i class="fas fa-user-slash"></i>
+                                                        <small>Sin profesor director asignado</small>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                            
+                                            <!-- Acciones -->
+                                            {% if can_manage_courses %}
+                                                <div class="mt-3 text-end">
+                                                    <a href="#" class="btn-action btn-students" title="Ver estudiantes">
+                                                        <i class="fas fa-users"></i> Estudiantes
+                                                    </a>
+                                                    <a href="#" class="btn-action btn-view" title="Ver detalles">
+                                                        <i class="fas fa-eye"></i> Ver
+                                                    </a>
+                                                    <a href="#" class="btn-action btn-edit" title="Editar curso">
+                                                        <i class="fas fa-edit"></i> Editar
+                                                    </a>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-school"></i>
+                    <h3>No hay cursos registrados</h3>
+                    <p class="mb-4">
+                        {% if not current_academic_year %}
+                            Primero configure un año académico, luego agregue cursos al sistema.
+                        {% else %}
+                            Comience agregando cursos para el año académico {{ current_academic_year.name }}.
+                        {% endif %}
+                    </p>
+                    {% if can_manage_courses and current_academic_year %}
+                        <button class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Crear Primer Curso
+                        </button>
+                    {% endif %}
+                </div>
+            {% endif %}
+            
+            <!-- Paginación -->
+            {% if is_paginated %}
+                <nav aria-label="Navegación de cursos" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                    <i class="fas fa-chevron-left"></i> Anterior
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                    Siguiente <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Script de funcionalidad -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchCourses');
+    const gradeFilter = document.getElementById('filterGrade');
+    const sortBy = document.getElementById('sortBy');
+    const courseItems = document.querySelectorAll('.course-item');
+    
+    function filterCourses() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedGrade = gradeFilter.value;
+        
+        let visibleCount = 0;
+        
+        courseItems.forEach(item => {
+            const grade = item.getAttribute('data-grade');
+            const section = item.getAttribute('data-section');
+            const teacher = item.getAttribute('data-teacher').toLowerCase();
+            
+            const matchesSearch = grade.toLowerCase().includes(searchTerm) || 
+                                section.toLowerCase().includes(searchTerm) || 
+                                teacher.includes(searchTerm);
+            const matchesGrade = !selectedGrade || grade === selectedGrade;
+            
+            if (matchesSearch && matchesGrade) {
+                item.style.display = 'block';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Ocultar/mostrar headers de grado vacíos
+        document.querySelectorAll('.grade-group').forEach(group => {
+            const visibleCourses = group.querySelectorAll('.course-item[style="display: block;"], .course-item:not([style*="display: none"])');
+            group.style.display = visibleCourses.length > 0 ? 'block' : 'none';
+        });
+    }
+    
+    function sortCourses() {
+        const sortValue = sortBy.value;
+        const coursesList = document.getElementById('coursesList');
+        const gradeGroups = Array.from(coursesList.children);
+        
+        gradeGroups.forEach(group => {
+            const courses = Array.from(group.querySelectorAll('.course-item'));
+            
+            courses.sort((a, b) => {
+                switch(sortValue) {
+                    case 'section':
+                        return a.getAttribute('data-section').localeCompare(b.getAttribute('data-section'));
+                    case 'students':
+                        return parseInt(b.getAttribute('data-students')) - parseInt(a.getAttribute('data-students'));
+                    default: // grade
+                        return a.getAttribute('data-grade').localeCompare(b.getAttribute('data-grade'));
+                }
+            });
+            
+            const row = group.querySelector('.row');
+            courses.forEach(course => row.appendChild(course));
+        });
+    }
+    
+    searchInput.addEventListener('input', filterCourses);
+    gradeFilter.addEventListener('change', filterCourses);
+    sortBy.addEventListener('change', sortCourses);
+    
+    // Animaciones
+    courseItems.forEach((item, index) => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(30px)';
+        setTimeout(() => {
+            item.style.transition = 'all 0.6s ease';
+            item.style.opacity = '1';
+            item.style.transform = 'translateY(0)';
+        }, index * 150);
+    });
+});
+</script>
+{% endblock %}

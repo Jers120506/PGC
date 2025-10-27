@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Usuario - Sistema de Gestión{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/labalsa_styles.css' %}" rel="stylesheet">
+<style>
+    .admin-edit-header {
+        background: linear-gradient(135deg, #1b5e20, #2e7d32);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 25px rgba(27, 94, 32, 0.3);
+    }
+    
+    .user-info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        border-left: 5px solid #2e7d32;
+    }
+    
+    .current-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 3px solid #2e7d32;
+        object-fit: cover;
+        background: #f5f5f5;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        color: #1b5e20;
+        font-weight: bold;
+        font-size: 1.3rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e8f5e8;
+    }
+    
+    .btn-labalsa {
+        background: linear-gradient(135deg, #2e7d32, #388e3c);
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
+    }
+    
+    .btn-labalsa:hover {
+        background: linear-gradient(135deg, #1b5e20, #2e7d32);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+        color: white;
+    }
+    
+    .btn-secondary-labalsa {
+        background: transparent;
+        border: 2px solid #2e7d32;
+        color: #2e7d32;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary-labalsa:hover {
+        background: #2e7d32;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .form-control:focus {
+        border-color: #2e7d32;
+        box-shadow: 0 0 0 0.2rem rgba(46, 125, 50, 0.25);
+    }
+    
+    .admin-badge {
+        background: linear-gradient(135deg, #ff6b35, #f7931e);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .role-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .role-teacher { background: #e3f2fd; color: #1565c0; }
+    .role-student { background: #f3e5f5; color: #7b1fa2; }
+    .role-parent { background: #fff3e0; color: #ef6c00; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Administrativo -->
+    <div class="admin-edit-header text-center">
+        <h2><i class="fas fa-user-edit"></i> Edición Administrativa de Usuario</h2>
+        <p class="mb-0">Editar perfil completo como administrador</p>
+    </div>
+    
+    <!-- Información del Usuario -->
+    <div class="user-info-card">
+        <div class="row align-items-center">
+            <div class="col-md-2 text-center">
+                {% if target_user.profile.avatar %}
+                    <img src="{{ target_user.profile.avatar.url }}" 
+                         alt="Avatar de {{ target_user.get_full_name|default:target_user.username }}" 
+                         class="current-avatar">
+                {% else %}
+                    <img src="{% static 'images/escudo.png' %}" 
+                         alt="Avatar por defecto" 
+                         class="current-avatar">
+                {% endif %}
+            </div>
+            <div class="col-md-10">
+                <div class="d-flex align-items-center mb-2">
+                    <h4 class="mb-0 me-3">
+                        {{ target_user.get_full_name|default:target_user.username }}
+                    </h4>
+                    {% if target_user.profile.is_admin %}
+                        <span class="admin-badge me-2">
+                            <i class="fas fa-crown"></i> ADMINISTRADOR
+                        </span>
+                    {% endif %}
+                    {% if target_user.profile.role %}
+                        <span class="role-badge role-{{ target_user.profile.role|lower }}">
+                            {{ target_user.profile.get_role_display }}
+                        </span>
+                    {% endif %}
+                </div>
+                <p class="text-muted mb-1">
+                    <i class="fas fa-envelope"></i> {{ target_user.email|default:"Sin email" }}
+                </p>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-user-clock"></i> Último acceso: 
+                    {{ target_user.last_login|date:"d/m/Y H:i"|default:"Nunca" }}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulario de Edición -->
+    <div class="form-section">
+        <h3 class="section-title">
+            <i class="fas fa-edit"></i> Editar Perfil Completo
+        </h3>
+        
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            
+            <div class="row">
+                <!-- Información Personal -->
+                <div class="col-md-6">
+                    <h5 class="text-muted mb-3">
+                        <i class="fas fa-user"></i> Información Personal
+                    </h5>
+                    
+                    <div class="mb-3">
+                        {{ profile_form.first_name.label_tag }}
+                        {{ profile_form.first_name }}
+                        {% if profile_form.first_name.errors %}
+                            <div class="text-danger small">
+                                {{ profile_form.first_name.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ profile_form.last_name.label_tag }}
+                        {{ profile_form.last_name }}
+                        {% if profile_form.last_name.errors %}
+                            <div class="text-danger small">
+                                {{ profile_form.last_name.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ profile_form.email.label_tag }}
+                        {{ profile_form.email }}
+                        {% if profile_form.email.errors %}
+                            <div class="text-danger small">
+                                {{ profile_form.email.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Información del Perfil -->
+                <div class="col-md-6">
+                    <h5 class="text-muted mb-3">
+                        <i class="fas fa-id-card"></i> Información del Perfil
+                    </h5>
+                    
+                    <div class="mb-3">
+                        {{ profile_form.phone.label_tag }}
+                        {{ profile_form.phone }}
+                        {% if profile_form.phone.errors %}
+                            <div class="text-danger small">
+                                {{ profile_form.phone.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ profile_form.role.label_tag }}
+                        {{ profile_form.role }}
+                        {% if profile_form.role.errors %}
+                            <div class="text-danger small">
+                                {{ profile_form.role.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ profile_form.grade.label_tag }}
+                        {{ profile_form.grade }}
+                        {% if profile_form.grade.errors %}
+                            <div class="text-danger small">
+                                {{ profile_form.grade.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Foto de Perfil -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5 class="text-muted mb-3">
+                        <i class="fas fa-camera"></i> Foto de Perfil
+                    </h5>
+                    
+                    <div class="mb-3">
+                        {{ profile_form.avatar.label_tag }}
+                        {{ profile_form.avatar }}
+                        {% if profile_form.avatar.errors %}
+                            <div class="text-danger small">
+                                {{ profile_form.avatar.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Configuración de Administrador -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5 class="text-muted mb-3">
+                        <i class="fas fa-shield-alt"></i> Permisos Administrativos
+                    </h5>
+                    
+                    <div class="form-check">
+                        {{ profile_form.is_admin }}
+                        {{ profile_form.is_admin.label_tag }}
+                        {% if profile_form.is_admin.errors %}
+                            <div class="text-danger small">
+                                {{ profile_form.is_admin.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text text-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Otorgar permisos de administrador permite acceso completo al sistema
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botones de Acción -->
+            <div class="text-center mt-5 pt-4">
+                <a href="{% url 'authentication:user_list' %}" 
+                   class="btn btn-secondary-labalsa me-3">
+                    <i class="fas fa-arrow-left"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-labalsa">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Preview de imagen
+document.addEventListener('DOMContentLoaded', function() {
+    const avatarInput = document.getElementById('id_avatar');
+    const currentAvatar = document.querySelector('.current-avatar');
+    
+    if (avatarInput && currentAvatar) {
+        avatarInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentAvatar.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

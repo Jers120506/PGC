@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load schedule_filters %}
+
+{% block title %}Mi Horario - Sistema Académico{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    
+    .schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    
+    .schedule-table th,
+    .schedule-table td {
+        border: 1px solid #dee2e6;
+        padding: 8px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    .schedule-table th {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        font-weight: 600;
+    }
+    
+    .time-header {
+        background: #f8f9fa !important;
+        color: #495057 !important;
+        font-weight: 600;
+        width: 120px;
+    }
+    
+    .schedule-cell {
+        height: 80px;
+        position: relative;
+        background: #f8f9fa;
+    }
+    
+    .schedule-item {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 8px;
+        padding: 8px;
+        margin: 2px;
+        height: calc(100% - 4px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        font-size: 0.8rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .schedule-item:hover {
+        transform: scale(1.02);
+        transition: all 0.2s ease;
+    }
+    
+    .subject-name {
+        font-weight: bold;
+        margin-bottom: 2px;
+    }
+    
+    .course-info {
+        font-size: 0.7rem;
+        opacity: 0.9;
+    }
+    
+    .classroom-info {
+        font-size: 0.7rem;
+        background: rgba(255,255,255,0.2);
+        border-radius: 4px;
+        padding: 2px 4px;
+        margin-top: 2px;
+    }
+    
+    .break-cell {
+        background: linear-gradient(135deg, #ffc107, #e0a800) !important;
+        color: #212529;
+        font-weight: bold;
+    }
+    
+    .empty-cell {
+        background: #f8f9fa;
+        color: #6c757d;
+        font-style: italic;
+    }
+    
+    .schedule-summary {
+        background: linear-gradient(135deg, #e9ecef, #f8f9fa);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .summary-item {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 4px solid #28a745;
+    }
+    
+    .no-schedule {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    
+    @media (max-width: 768px) {
+        .schedule-table {
+            font-size: 0.8rem;
+        }
+        
+        .schedule-cell {
+            height: 60px;
+        }
+        
+        .schedule-item {
+            font-size: 0.7rem;
+            padding: 4px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Encabezado -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-success mb-0">
+                    <i class="fas fa-calendar-alt"></i> Mi Horario de Clases
+                </h2>
+                <span class="badge bg-success fs-6">
+                    Jornada Única: 7:00 AM - 12:00 PM
+                </span>
+            </div>
+
+            {% if teacher_schedules %}
+                <!-- Resumen del horario -->
+                <div class="schedule-summary">
+                    <h4 class="text-success mb-3">
+                        <i class="fas fa-chart-bar"></i> Resumen Semanal
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="summary-item">
+                                <strong>Total de clases semanales:</strong> {{ teacher_schedules.count }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="summary-item">
+                                <strong>Horario:</strong> Lunes a Viernes, 7:00 AM - 12:00 PM
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de horarios -->
+                <div class="schedule-container">
+                    <div class="table-responsive">
+                        <table class="schedule-table">
+                            <thead>
+                                <tr>
+                                    <th class="time-header">Hora</th>
+                                    {% for day_num, day_data in schedule_matrix.items %}
+                                        <th>{{ day_data.name }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for time_slot in time_slots %}
+                                    <tr>
+                                        <td class="time-header">
+                                            <strong>{{ time_slot.name }}</strong><br>
+                                            <small>{{ time_slot.start_time|time:"H:i" }} - {{ time_slot.end_time|time:"H:i" }}</small>
+                                        </td>
+                                        {% for day_num, day_data in schedule_matrix.items %}
+                                            <td class="schedule-cell">
+                                                {% if day_data.slots %}
+                                                    {% for slot_id, schedule in day_data.slots.items %}
+                                                        {% if slot_id == time_slot.id %}
+                                                            {% if schedule %}
+                                                                <div class="schedule-item">
+                                                                    <div class="subject-name">
+                                                                        {{ schedule.subject_assignment.subject.name }}
+                                                                    </div>
+                                                                    <div class="course-info">
+                                                                        {{ schedule.subject_assignment.course.grade.name }} {{ schedule.subject_assignment.course.section }}
+                                                                    </div>
+                                                                    <div class="classroom-info">
+                                                                        <i class="fas fa-door-open"></i>
+                                                                        {{ schedule.classroom.name }}
+                                                                    </div>
+                                                                </div>
+                                                            {% elif time_slot.name == "Descanso" %}
+                                                                <div class="break-cell">
+                                                                    <i class="fas fa-coffee"></i><br>
+                                                                    Descanso
+                                                                </div>
+                                                            {% else %}
+                                                                <div class="empty-cell">
+                                                                    Libre
+                                                                </div>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% elif time_slot.name == "Descanso" %}
+                                                    <div class="break-cell">
+                                                        <i class="fas fa-coffee"></i><br>
+                                                        Descanso
+                                                    </div>
+                                                {% else %}
+                                                    <div class="empty-cell">
+                                                        Libre
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Lista detallada de clases -->
+                <div class="schedule-container">
+                    <h4 class="text-success mb-3">
+                        <i class="fas fa-list"></i> Detalle de Clases
+                    </h4>
+                    <div class="row">
+                        {% regroup teacher_schedules by weekday as schedules_by_day %}
+                        {% for day_group in schedules_by_day %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-calendar-day"></i>
+                                            {{ day_group.grouper|get_weekday_name }}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        {% for schedule in day_group.list %}
+                                            <div class="mb-2">
+                                                <strong>{{ schedule.time_slot.name }}</strong><br>
+                                                <small class="text-muted">{{ schedule.time_slot.start_time|time:"H:i" }} - {{ schedule.time_slot.end_time|time:"H:i" }}</small><br>
+                                                {{ schedule.subject_assignment.subject.name }}<br>
+                                                <span class="badge bg-primary">
+                                                    {{ schedule.subject_assignment.course.grade.name }} {{ schedule.subject_assignment.course.section }}
+                                                </span>
+                                                <span class="badge bg-info">
+                                                    {{ schedule.classroom.name }}
+                                                </span>
+                                            </div>
+                                            {% if not forloop.last %}<hr>{% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="no-schedule">
+                    <i class="fas fa-calendar-times fa-5x text-muted mb-4"></i>
+                    <h3 class="text-muted mb-3">No tienes horarios asignados</h3>
+                    <p class="text-muted fs-5">
+                        Contacta al coordinador académico para obtener tu horario de clases.
+                    </p>
+                    <a href="{% url 'academics_extended:dashboard' %}" class="btn btn-success mt-3">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Script para manejar la matriz de horarios -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Datos del horario desde Django
+    const scheduleMatrix = {{ schedule_matrix_json|safe }};
+    
+    // Función para obtener el horario de un slot específico
+    function getScheduleForSlot(dayNum, slotId) {
+        if (scheduleMatrix[dayNum] && scheduleMatrix[dayNum].slots[slotId]) {
+            return scheduleMatrix[dayNum].slots[slotId];
+        }
+        return null;
+    }
+    
+    // Agregar tooltips a las celdas de horario
+    document.querySelectorAll('.schedule-item').forEach(function(item) {
+        item.addEventListener('mouseenter', function() {
+            this.style.zIndex = '10';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.zIndex = '1';
+        });
+    });
+});
+</script>
+{% endblock %}

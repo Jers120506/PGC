@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Docente - Institución Educativa La Balsa{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/labalsa_styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header con información del colegio -->
+    <div class="school-header text-center fade-in">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <img src="{% static 'images/ESCUDO-IE-LA-BALSA.png' %}" alt="Escudo Institución Educativa La Balsa" 
+                     class="school-shield">
+            </div>
+            <div class="col-md-8">
+                <h2 class="mb-1">Institución Educativa La Balsa</h2>
+                <p class="mb-1">Córdoba - Colombia</p>
+                <h4 class="mb-0">Dashboard Docente</h4>
+            </div>
+            <div class="col-md-2 text-end">
+                <h5 class="mb-0">{{ teacher.get_full_name }}</h5>
+                <small>Profesor</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title text-primary">Mis Cursos</h5>
+                            <h3 class="mb-0">{{ stats.total_courses }}</h3>
+                        </div>
+                        <i class="fas fa-chalkboard fa-2x text-primary opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title text-success">Estudiantes</h5>
+                            <h3 class="mb-0">{{ stats.total_students }}</h3>
+                        </div>
+                        <i class="fas fa-user-graduate fa-2x text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title text-warning">Asistencia Hoy</h5>
+                            <h3 class="mb-0">{{ stats.today_attendance }}</h3>
+                        </div>
+                        <i class="fas fa-calendar-check fa-2x text-warning opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title text-info">Mensajes</h5>
+                            <h3 class="mb-0">{{ stats.unread_messages }}</h3>
+                            <small class="text-muted">Sin leer</small>
+                        </div>
+                        <i class="fas fa-envelope fa-2x text-info opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h5 class="mb-3"><i class="fas fa-bolt me-2"></i>Acciones Rápidas</h5>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <a href="{% url 'academics:quick_attendance' %}" class="btn btn-outline-primary quick-action-btn w-100 text-decoration-none">
+                <i class="fas fa-user-check fa-2x mb-2"></i>
+                <span>Tomar Asistencia</span>
+            </a>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <a href="{% url 'academics:quick_grades' %}" class="btn btn-outline-success quick-action-btn w-100 text-decoration-none">
+                <i class="fas fa-edit fa-2x mb-2"></i>
+                <span>Registrar Notas</span>
+            </a>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <a href="{% url 'academics:my_students' %}" class="btn btn-outline-info quick-action-btn w-100 text-decoration-none">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <span>Mis Estudiantes</span>
+            </a>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <a href="{% url 'academics:my_courses' %}" class="btn btn-outline-warning quick-action-btn w-100 text-decoration-none">
+                <i class="fas fa-book fa-2x mb-2"></i>
+                <span>Mis Cursos</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del período actual -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary" style="background: linear-gradient(135deg, #2E8B57, #228B22) !important;">
+                    <h6 class="mb-0" style="color: white !important; font-weight: 700 !important;">
+                        <i class="fas fa-calendar me-2" style="color: white !important;"></i>Período Académico
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if current_period %}
+                        <h5 class="text-primary mb-3">{{ current_period.name }}</h5>
+                        <div class="mb-2">
+                            <strong>Inicio:</strong> 
+                            <span class="text-dark">{{ current_period.start_date|date:"d/m/Y" }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Fin:</strong> 
+                            <span class="text-dark">{{ current_period.end_date|date:"d/m/Y" }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Progreso del período</small>
+                                <small class="text-primary fw-bold">45% completado</small>
+                            </div>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: 45%" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100">
+                                <strong>45%</strong>
+                            </div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-success"><strong>Período en curso</strong></small>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                            <p>No hay período académico activo</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen de actividades -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success" style="background: linear-gradient(135deg, #3CB371, #2E8B57) !important;">
+                    <h6 class="mb-0" style="color: white !important; font-weight: 700 !important;">
+                        <i class="fas fa-chart-line me-2" style="color: white !important;"></i>Actividad Reciente
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Notas esta semana:</span>
+                        <span class="badge bg-success">{{ stats.week_grades }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Observaciones:</span>
+                        <span class="badge bg-info">{{ stats.week_behaviors }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Notas bajas:</span>
+                        <span class="badge bg-danger">{{ stats.low_grades_count }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Inasistencias frecuentes:</span>
+                        <span class="badge bg-warning">{{ stats.frequent_absences }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Anuncios importantes -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning" style="background: linear-gradient(135deg, #FFD700, #FFA500) !important;">
+                    <h6 class="mb-0" style="color: #228B22 !important; font-weight: 700 !important;">
+                        <i class="fas fa-bullhorn me-2" style="color: #228B22 !important;"></i>Anuncios
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if important_announcements %}
+                        {% for announcement in important_announcements %}
+                            <div class="border-bottom pb-2 mb-2">
+                                <h6 class="mb-1">{{ announcement.title }}</h6>
+                                <p class="small text-muted mb-1">{{ announcement.content|truncatewords:10 }}</p>
+                                <small class="text-muted">{{ announcement.created_at|date:"d/m H:i" }}</small>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>No hay anuncios nuevos</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mis asignaciones del día -->
+    {% if today_assignments %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Mis Materias Asignadas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for assignment in today_assignments %}
+                            <div class="col-lg-6 mb-3">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-primary mb-1">{{ assignment.subject.name }}</h6>
+                                    <p class="mb-1"><strong>Curso:</strong> {{ assignment.course.grade.name }} {{ assignment.course.section }}</p>
+                                    <p class="mb-0 small text-muted">
+                                        <i class="fas fa-users me-1"></i>{{ assignment.course.students.count }} estudiantes
+                                    </p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Actualizar la hora cada minuto
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('es-CO', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        document.querySelector('.current-time')?.textContent = timeString;
+    }
+    
+    // Actualizar cada minuto
+    setInterval(updateTime, 60000);
+    updateTime(); // Llamar inmediatamente
+</script>
+{% endblock %}

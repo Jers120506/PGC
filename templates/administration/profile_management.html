@@ -1,0 +1,799 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Perfiles - Sistema Administrativo{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
+<style>
+.profile-completion-bar {
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.profile-card {
+    transition: transform 0.2s ease-in-out;
+    border-left: 4px solid transparent;
+}
+
+.profile-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.profile-card.complete {
+    border-left-color: #28a745;
+}
+
+.profile-card.incomplete {
+    border-left-color: #ffc107;
+}
+
+.profile-card.needs-attention {
+    border-left-color: #dc3545;
+}
+
+.role-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(45deg, #007bff, #6f42c1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+}
+
+.stats-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+/* Estilos para los filtros */
+.filters-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.filter-group {
+    margin-bottom: 10px;
+}
+
+.filter-group:last-child {
+    margin-bottom: 0;
+}
+
+.search-input {
+    border-radius: 20px;
+    padding-left: 15px;
+}
+
+.filter-select {
+    border-radius: 6px;
+}
+
+.clear-filters-btn {
+    border-radius: 20px;
+}
+
+/* Estilos mejorados para DataTables */
+.dataTables_wrapper .dataTables_filter {
+    display: none; /* Ocultamos la búsqueda por defecto de DataTables */
+}
+
+.dataTables_wrapper .dataTables_length {
+    margin-bottom: 10px;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                <h1 class="h3 mb-0 text-gray-800">
+                    <i class="fas fa-id-badge text-primary me-2"></i>
+                    Gestión de Perfiles
+                </h1>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="refreshStats()">
+                        <i class="fas fa-sync-alt me-1"></i> Actualizar
+                    </button>
+                    <button class="btn btn-success" onclick="exportProfiles()">
+                        <i class="fas fa-download me-1"></i> Exportar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estadísticas Generales -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total de Usuarios
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ profile_stats.total_users }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Perfiles Completos
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ profile_stats.profiles_complete }}
+                                        <small class="text-muted">
+                                            ({% widthratio profile_stats.profiles_complete profile_stats.total_users 100 %}%)
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Perfiles Incompletos
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ profile_stats.profiles_incomplete }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Sin Avatar
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ profile_stats.without_avatar }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-image fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usuarios por Rol -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="fas fa-chart-pie me-2"></i>
+                                Distribución por Roles
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for role_code, role_data in users_by_role.items %}
+                                <div class="col-md-3 mb-3">
+                                    <div class="text-center">
+                                        <div class="mb-2">
+                                            {% if role_code == 'admin' %}
+                                                <i class="fas fa-user-shield text-primary stats-icon"></i>
+                                            {% elif role_code == 'teacher' %}
+                                                <i class="fas fa-chalkboard-teacher text-success stats-icon"></i>
+                                            {% elif role_code == 'secretary' %}
+                                                <i class="fas fa-user-tie text-info stats-icon"></i>
+                                            {% else %}
+                                                <i class="fas fa-user-graduate text-warning stats-icon"></i>
+                                            {% endif %}
+                                        </div>
+                                        <h5 class="font-weight-bold">{{ role_data.name }}</h5>
+                                        <p class="text-muted mb-1">{{ role_data.count }} usuarios</p>
+                                        <div class="progress mb-2" style="height: 6px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {% widthratio role_data.complete role_data.count 100 %}%"></div>
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ role_data.complete }}/{{ role_data.count }} completos
+                                        </small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Perfiles que Necesitan Atención -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-warning">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                Perfiles que Necesitan Atención
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if incomplete_profiles %}
+                            <div class="row">
+                                {% for profile_info in incomplete_profiles %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="profile-card card h-100 
+                                        {% if profile_info.completion < 30 %}needs-attention{% elif profile_info.completion < 70 %}incomplete{% else %}complete{% endif %}">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-2">
+                                                {% if profile_info.user.profile.avatar %}
+                                                    <img src="{{ profile_info.user.profile.avatar.url }}" 
+                                                         class="rounded-circle me-2" width="40" height="40">
+                                                {% else %}
+                                                    <div class="avatar-placeholder me-2">
+                                                        {{ profile_info.user.first_name.0|default:profile_info.user.username.0 }}{{ profile_info.user.last_name.0|default:'' }}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-0">{{ profile_info.user.first_name }} {{ profile_info.user.last_name }}</h6>
+                                                    <small class="text-muted">@{{ profile_info.user.username }}</small>
+                                                </div>
+                                                <span class="role-badge badge bg-secondary">{{ profile_info.role }}</span>
+                                            </div>
+                                            
+                                            <div class="mb-2">
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <small class="text-muted">Completitud</small>
+                                                    <small class="font-weight-bold">{{ profile_info.completion }}%</small>
+                                                </div>
+                                                <div class="profile-completion-bar bg-light">
+                                                    <div class="bg-{% if profile_info.completion < 30 %}danger{% elif profile_info.completion < 70 %}warning{% else %}success{% endif %}" 
+                                                         style="width: {{ profile_info.completion }}%; height: 100%;"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="text-center">
+                                                <button class="btn btn-sm btn-primary" 
+                                                        onclick="editProfile({{ profile_info.user.id }})">
+                                                    <i class="fas fa-edit me-1"></i> Editar Perfil
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                                <h5 class="text-success">¡Excelente!</h5>
+                                <p class="text-muted">Todos los perfiles están completos o en buen estado.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Todos los Usuarios -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="fas fa-list me-2"></i>
+                                Todos los Usuarios
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Filtros de búsqueda -->
+                            <div class="filters-container">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="filter-group">
+                                            <label class="form-label small text-muted">Buscar usuario</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">
+                                                    <i class="fas fa-search"></i>
+                                                </span>
+                                                <input type="text" class="form-control search-input" id="searchInput" 
+                                                       placeholder="Buscar por nombre, usuario, email...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="filter-group">
+                                            <label class="form-label small text-muted">Rol</label>
+                                            <select class="form-select filter-select" id="roleFilter">
+                                                <option value="">Todos</option>
+                                                <option value="admin">Administradores</option>
+                                                <option value="teacher">Profesores</option>
+                                                <option value="secretary">Secretarios</option>
+                                                <option value="student">Estudiantes</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="filter-group">
+                                            <label class="form-label small text-muted">Completitud</label>
+                                            <select class="form-select filter-select" id="completionFilter">
+                                                <option value="">Todos</option>
+                                                <option value="complete">Completos (≥70%)</option>
+                                                <option value="incomplete">Incompletos (30-69%)</option>
+                                                <option value="needs-attention">Requiere atención (<30%)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="filter-group">
+                                            <label class="form-label small text-muted">Avatar</label>
+                                            <select class="form-select filter-select" id="avatarFilter">
+                                                <option value="">Todos</option>
+                                                <option value="with-avatar">Con avatar</option>
+                                                <option value="without-avatar">Sin avatar</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="filter-group">
+                                            <label class="form-label small text-muted">&nbsp;</label>
+                                            <button class="btn btn-outline-secondary w-100 clear-filters-btn" onclick="clearFilters()">
+                                                <i class="fas fa-times me-1"></i>Limpiar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="profilesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Usuario</th>
+                                            <th>Rol</th>
+                                            <th>Completitud</th>
+                                            <th>Avatar</th>
+                                            <th>Último Acceso</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in all_users %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% if user.profile.avatar %}
+                                                        <img src="{{ user.profile.avatar.url }}" 
+                                                             class="rounded-circle me-2" width="32" height="32">
+                                                    {% else %}
+                                                        <div class="avatar-placeholder me-2" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                            {{ user.first_name.0|default:user.username.0 }}{{ user.last_name.0|default:'' }}
+                                                        </div>
+                                                    {% endif %}
+                                                    <div>
+                                                        <strong>{{ user.first_name }} {{ user.last_name }}</strong>
+                                                        <br><small class="text-muted">@{{ user.username }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if user.profile.role == 'admin' %}
+                                                    <span class="badge bg-primary">{{ user.profile.get_role_display }}</span>
+                                                {% elif user.profile.role == 'teacher' %}
+                                                    <span class="badge bg-success">{{ user.profile.get_role_display }}</span>
+                                                {% elif user.profile.role == 'secretary' %}
+                                                    <span class="badge bg-info">{{ user.profile.get_role_display }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">{{ user.profile.get_role_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="profile-completion-bar bg-light me-2" style="width: 60px;">
+                                                        <div class="bg-{% if user.profile.profile_completion_percentage < 30 %}danger{% elif user.profile.profile_completion_percentage < 70 %}warning{% else %}success{% endif %}" 
+                                                             style="width: {{ user.profile.profile_completion_percentage }}%; height: 100%;"></div>
+                                                    </div>
+                                                    <small class="font-weight-bold">{{ user.profile.profile_completion_percentage }}%</small>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if user.profile.avatar %}
+                                                    <i class="fas fa-check text-success"></i>
+                                                {% else %}
+                                                    <i class="fas fa-times text-danger"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if user.last_login %}
+                                                    {{ user.last_login|date:"d/m/Y H:i" }}
+                                                {% else %}
+                                                    <span class="text-muted">Nunca</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-primary" 
+                                                            title="Ver/Editar Perfil"
+                                                            onclick="editProfile({{ user.id }})">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-info" 
+                                                            title="Subir Avatar"
+                                                            onclick="uploadAvatar({{ user.id }})">
+                                                        <i class="fas fa-camera"></i>
+                                                    </button>
+                                                    <a href="{% url 'administration:profile_detail' user.id %}" 
+                                                       class="btn btn-outline-secondary" 
+                                                       title="Ver Detalles">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar Perfil -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-edit me-2"></i>
+                    Editar Perfil
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="profileFormContainer">
+                <!-- Contenido del formulario se cargará aquí -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Subir Avatar -->
+<div class="modal fade" id="avatarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-camera me-2"></i>
+                    Subir Avatar
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="avatarForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <input type="hidden" id="avatarUserId" name="user_id">
+                    <div class="mb-3">
+                        <label for="avatarFile" class="form-label">Seleccionar Imagen</label>
+                        <input type="file" class="form-control" id="avatarFile" name="avatar" 
+                               accept="image/*" required>
+                        <div class="form-text">
+                            Formatos permitidos: JPG, PNG, GIF, WebP. Tamaño máximo: 5MB.
+                        </div>
+                    </div>
+                    <div id="avatarPreview" class="text-center" style="display: none;">
+                        <img id="previewImage" class="rounded-circle" style="max-width: 150px; max-height: 150px;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-1"></i> Subir Avatar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery (necesario para DataTables) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+// Variables globales
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+let profilesTable;
+
+// Función para actualizar estadísticas
+function refreshStats() {
+    fetch("{% url 'administration:profile_stats_api' %}", {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrftoken,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // Recargar la página para mostrar stats actualizadas
+        } else {
+            alert('Error al actualizar estadísticas: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al actualizar estadísticas.');
+    });
+}
+
+// Función para editar perfil
+function editProfile(userId) {
+    // Por ahora, redirigir a la página de detalle del perfil
+    window.location.href = `{% url 'administration:profile_detail' 0 %}`.replace('0', userId);
+}
+
+// Función para subir avatar
+function uploadAvatar(userId) {
+    document.getElementById('avatarUserId').value = userId;
+    const modal = new bootstrap.Modal(document.getElementById('avatarModal'));
+    modal.show();
+}
+
+// Preview de imagen antes de subir
+document.getElementById('avatarFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImage').src = e.target.result;
+            document.getElementById('avatarPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Enviar formulario de avatar
+document.getElementById('avatarForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch("{% url 'administration:upload_avatar_api' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // Recargar para mostrar el nuevo avatar
+        } else {
+            alert('Error: ' + (data.details ? data.details.join('\n') : data.error));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al subir avatar.');
+    });
+});
+
+// Función para exportar perfiles
+function exportProfiles() {
+    // Mostrar indicador de carga
+    const exportBtn = document.querySelector('button[onclick="exportProfiles()"]');
+    const originalText = exportBtn.innerHTML;
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Exportando...';
+    exportBtn.disabled = true;
+    
+    // Hacer la petición de exportación
+    window.location.href = "{% url 'administration:export_profiles_api' %}";
+    
+    // Restaurar el botón después de un momento
+    setTimeout(() => {
+        exportBtn.innerHTML = originalText;
+        exportBtn.disabled = false;
+    }, 3000);
+}
+
+// Inicializar DataTable con filtros personalizados
+$(document).ready(function() {
+    if (typeof $.fn.DataTable !== 'undefined') {
+        console.log('DataTables cargado correctamente para perfiles');
+        
+        // Inicializar DataTable
+        profilesTable = $('#profilesTable').DataTable({
+            "pageLength": 25,
+            "order": [[2, "asc"]], // Ordenar por completitud
+            "responsive": true,
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+            },
+            "columnDefs": [
+                {
+                    "targets": [0, 1, 2, 4], // Todas las columnas searchables excepto avatar y acciones
+                    "searchable": true
+                }
+            ]
+        });
+        
+        // Función de filtrado personalizado
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                // Solo aplicar a la tabla de perfiles
+                if (settings.nTable.id !== 'profilesTable') {
+                    return true;
+                }
+                
+                var roleFilter = $('#roleFilter').val();
+                var completionFilter = $('#completionFilter').val();
+                var avatarFilter = $('#avatarFilter').val();
+                
+                // Obtener el contenido de las celdas
+                var row = profilesTable.row(dataIndex).node();
+                var roleCell = $(row).find('td:eq(1)').text().toLowerCase();
+                var completionCell = $(row).find('td:eq(2)').text();
+                var avatarCell = $(row).find('td:eq(3) i').hasClass('fa-check');
+                
+                // Extraer porcentaje de completitud
+                var completionMatch = completionCell.match(/(\d+)%/);
+                var completionPercentage = completionMatch ? parseInt(completionMatch[1]) : 0;
+                
+                // Filtro de rol
+                if (roleFilter && roleFilter !== '') {
+                    var roleMatch = false;
+                    switch(roleFilter) {
+                        case 'admin':
+                            roleMatch = roleCell.includes('administrador');
+                            break;
+                        case 'teacher':
+                            roleMatch = roleCell.includes('profesor');
+                            break;
+                        case 'secretary':
+                            roleMatch = roleCell.includes('secretario');
+                            break;
+                        case 'student':
+                            roleMatch = roleCell.includes('estudiante');
+                            break;
+                    }
+                    if (!roleMatch) return false;
+                }
+                
+                // Filtro de completitud
+                if (completionFilter && completionFilter !== '') {
+                    var completionMatch = false;
+                    switch(completionFilter) {
+                        case 'complete':
+                            completionMatch = completionPercentage >= 70;
+                            break;
+                        case 'incomplete':
+                            completionMatch = completionPercentage >= 30 && completionPercentage < 70;
+                            break;
+                        case 'needs-attention':
+                            completionMatch = completionPercentage < 30;
+                            break;
+                    }
+                    if (!completionMatch) return false;
+                }
+                
+                // Filtro de avatar
+                if (avatarFilter && avatarFilter !== '') {
+                    var avatarMatch = false;
+                    switch(avatarFilter) {
+                        case 'with-avatar':
+                            avatarMatch = avatarCell;
+                            break;
+                        case 'without-avatar':
+                            avatarMatch = !avatarCell;
+                            break;
+                    }
+                    if (!avatarMatch) return false;
+                }
+                
+                return true;
+            }
+        );
+        
+        // Función de aplicar filtros
+        function applyFilters() {
+            var searchValue = $('#searchInput').val();
+            
+            // Aplicar búsqueda global
+            profilesTable.search(searchValue);
+            
+            // Redibujar tabla (los filtros personalizados se aplican automáticamente)
+            profilesTable.draw();
+        }
+        
+        // Event listeners para filtros
+        $('#searchInput').on('keyup', applyFilters);
+        $('#roleFilter').on('change', function() {
+            profilesTable.draw();
+        });
+        $('#completionFilter').on('change', function() {
+            profilesTable.draw();
+        });
+        $('#avatarFilter').on('change', function() {
+            profilesTable.draw();
+        });
+        
+        // Función para limpiar filtros
+        window.clearFilters = function() {
+            $('#searchInput').val('');
+            $('#roleFilter').val('');
+            $('#completionFilter').val('');
+            $('#avatarFilter').val('');
+            profilesTable.search('').draw();
+        };
+        
+        console.log('Filtros de perfiles configurados correctamente');
+    } else {
+        console.error('DataTables no está disponible');
+    }
+});
+</script>
+{% endblock %}

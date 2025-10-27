@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel de Administración - Colegio La Balsa{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header del Dashboard -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="card-title mb-0">
+                                <i class="fas fa-crown me-2"></i>
+                                Panel de Administración
+                            </h1>
+                            <p class="card-text mb-0">
+                                Gestión completa del Colegio La Balsa
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <div class="text-end">
+                                <h5 class="mb-0">{{ user.first_name }} {{ user.last_name }}</h5>
+                                <small>Administrador Principal</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Principales -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Estudiantes</div>
+                            <div class="h5 mb-0">{{ total_students }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-graduate fa-2x text-white-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Profesores</div>
+                            <div class="h5 mb-0">{{ total_teachers }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard-teacher fa-2x text-white-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Cursos</div>
+                            <div class="h5 mb-0">{{ total_courses }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-school fa-2x text-white-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Materias</div>
+                            <div class="h5 mb-0">{{ total_subjects }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book fa-2x text-white-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas del Sistema -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Usuarios del Sistema
+                            </div>
+                            <div class="h5 mb-0">{{ total_users }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Administradores
+                            </div>
+                            <div class="h5 mb-0">{{ total_admins }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-shield fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Secretarios
+                            </div>
+                            <div class="h5 mb-0">{{ total_secretaries }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-tie fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Logins Recientes
+                            </div>
+                            <div class="h5 mb-0">{{ recent_logins }}</div>
+                            <small class="text-muted">Últimos 7 días</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-sign-in-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Gestión -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tools me-2"></i>
+                        Herramientas de Administración
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Gestión de Usuarios -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-left-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-users-cog text-primary me-2"></i>
+                                        Gestión de Usuarios
+                                    </h5>
+                                    <p class="card-text">Administrar profesores, secretarios y personal del colegio.</p>
+                                    <a href="{% url 'administration:admin_users' %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-cog me-1"></i>
+                                        Gestionar Usuarios
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gestión Académica -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-left-success">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-graduation-cap text-success me-2"></i>
+                                        Sistema Académico
+                                    </h5>
+                                    <p class="card-text">Grados, materias, cursos y estructura académica.</p>
+                                    <a href="{% url 'administration:system_config' %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-school me-1"></i>
+                                        Configurar Academia
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gestión de Perfiles -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-left-info">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-id-card text-info me-2"></i>
+                                        Gestión de Perfiles
+                                    </h5>
+                                    <p class="card-text">Administrar perfiles de usuarios y completitud de información.</p>
+                                    <a href="{% url 'administration:profile_management' %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-user-edit me-1"></i>
+                                        Gestionar Perfiles
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gestión de Grupos -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-left-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-users text-warning me-2"></i>
+                                        Directores de Grupo
+                                    </h5>
+                                    <p class="card-text">Asignar y gestionar directores de grupo por cursos.</p>
+                                    <a href="{% url 'administration:group_management' %}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-user-tie me-1"></i>
+                                        Gestionar Directores
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Respaldos del Sistema -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-left-danger">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-database text-danger me-2"></i>
+                                        Respaldos del Sistema
+                                    </h5>
+                                    <p class="card-text">Crear y gestionar respaldos de la base de datos.</p>
+                                    <a href="{% url 'administration:backup_management' %}" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-download me-1"></i>
+                                        Gestionar Respaldos
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel de Información -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Información del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Año Académico Actual:</strong><br>
+                        {% if current_academic_year %}
+                            <span class="badge bg-success">{{ current_academic_year.name }}</span>
+                        {% else %}
+                            <span class="badge bg-warning">No configurado</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Total de Grados:</strong><br>
+                        <span class="badge bg-info">{{ total_grades }} grados configurados</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Años Académicos:</strong><br>
+                        <span class="badge bg-secondary">{{ total_academic_years }} años registrados</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <h6 class="text-primary">Accesos Rápidos</h6>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'administration:system_config' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-cogs me-1"></i>
+                                Configuración Académica
+                            </a>
+                            <a href="{% url 'authentication:profile' %}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-user-edit me-1"></i>
+                                Editar Mi Perfil
+                            </a>
+                            <a href="{% url 'authentication:logout' %}" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-sign-out-alt me-1"></i>
+                                Cerrar Sesión
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución de Estudiantes por Grado -->
+    {% if students_by_grade %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Distribución de Estudiantes por Grado
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Grado</th>
+                                    <th>Cantidad de Estudiantes</th>
+                                    <th>Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grade_stat in students_by_grade %}
+                                <tr>
+                                    <td>{{ grade_stat.course__grade__name }}</td>
+                                    <td>{{ grade_stat.count }}</td>
+                                    <td>
+                                        {% widthratio grade_stat.count total_students 100 %}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+</style>
+{% endblock %}

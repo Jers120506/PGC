@@ -1,0 +1,670 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Perfil de {{ target_user.first_name }} {{ target_user.last_name }} - Gestión de Perfiles{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    color: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border: 4px solid white;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-avatar-placeholder {
+    width: 120px;
+    height: 120px;
+    background: rgba(255,255,255,0.3);
+    border: 4px solid white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.completion-circle {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(
+        #28a745 0deg,
+        #28a745 calc(var(--completion) * 3.6deg),
+        #e9ecef calc(var(--completion) * 3.6deg),
+        #e9ecef 360deg
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.completion-circle::before {
+    content: '';
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: white;
+    border-radius: 50%;
+}
+
+.completion-text {
+    position: relative;
+    z-index: 1;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.form-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-section h5 {
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.field-group {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if user_not_found %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-danger text-center">
+                <i class="fas fa-user-times fa-3x mb-3"></i>
+                <h4>Usuario no encontrado</h4>
+                <p>El usuario solicitado no existe en el sistema.</p>
+                <a href="{% url 'administration:profile_management' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Volver a Gestión de Perfiles
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    
+    <!-- Header del Perfil -->
+    <div class="profile-header">
+        <div class="row align-items-center">
+            <div class="col-md-2 text-center">
+                {% if target_profile.avatar %}
+                    <img src="{{ target_profile.avatar.url }}" class="profile-avatar" alt="Avatar">
+                {% else %}
+                    <div class="profile-avatar-placeholder">
+                        {{ target_user.first_name.0|default:target_user.username.0 }}{{ target_user.last_name.0|default:'' }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <h2 class="mb-1">{{ target_user.first_name }} {{ target_user.last_name }}</h2>
+                <p class="mb-1">@{{ target_user.username }}</p>
+                <p class="mb-1">{{ target_user.email }}</p>
+                <span class="badge bg-light text-dark fs-6">
+                    {% if target_profile.role == 'admin' %}
+                        <i class="fas fa-user-shield me-1"></i> {{ target_profile.get_role_display }}
+                    {% elif target_profile.role == 'teacher' %}
+                        <i class="fas fa-chalkboard-teacher me-1"></i> {{ target_profile.get_role_display }}
+                    {% elif target_profile.role == 'secretary' %}
+                        <i class="fas fa-user-tie me-1"></i> {{ target_profile.get_role_display }}
+                    {% else %}
+                        <i class="fas fa-user-graduate me-1"></i> {{ target_profile.get_role_display }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="col-md-2 text-center">
+                <div class="completion-circle" style="--completion: {{ profile_completion }}">
+                    <div class="completion-text">{{ profile_completion }}%</div>
+                </div>
+                <p class="mt-2 mb-0">Completitud</p>
+            </div>
+            <div class="col-md-2 text-center">
+                <div class="btn-group-vertical">
+                    <button class="btn btn-light btn-sm mb-2" onclick="editProfile()">
+                        <i class="fas fa-edit me-1"></i> Editar
+                    </button>
+                    <button class="btn btn-light btn-sm mb-2" onclick="uploadAvatar()">
+                        <i class="fas fa-camera me-1"></i> Avatar
+                    </button>
+                    <a href="{% url 'administration:profile_management' %}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del Perfil -->
+        <div class="col-lg-8">
+            <form id="profileForm" method="post">
+                {% csrf_token %}
+                
+                <!-- Información Personal -->
+                <div class="form-section">
+                    <h5><i class="fas fa-user me-2"></i> Información Personal</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.first_name.label_tag }}
+                                {{ profile_form.first_name }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.last_name.label_tag }}
+                                {{ profile_form.last_name }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.email.label_tag }}
+                                {{ profile_form.email }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.identification_number.label_tag }}
+                                {{ profile_form.identification_number }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.date_of_birth.label_tag }}
+                                {{ profile_form.date_of_birth }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.gender.label_tag }}
+                                {{ profile_form.gender }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Contacto -->
+                <div class="form-section">
+                    <h5><i class="fas fa-phone me-2"></i> Información de Contacto</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.phone.label_tag }}
+                                {{ profile_form.phone }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.mobile_phone.label_tag }}
+                                {{ profile_form.mobile_phone }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.city.label_tag }}
+                                {{ profile_form.city }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.emergency_contact_name.label_tag }}
+                                {{ profile_form.emergency_contact_name }}
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="field-group">
+                                {{ profile_form.address.label_tag }}
+                                {{ profile_form.address }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.emergency_contact_phone.label_tag }}
+                                {{ profile_form.emergency_contact_phone }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Académica/Profesional -->
+                {% if target_profile.is_staff_member %}
+                <div class="form-section">
+                    <h5>
+                        {% if target_profile.is_teacher %}
+                            <i class="fas fa-graduation-cap me-2"></i> Información Académica
+                        {% else %}
+                            <i class="fas fa-briefcase me-2"></i> Información Profesional
+                        {% endif %}
+                    </h5>
+                    <div class="row">
+                        {% if profile_form.education_level %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.education_level.label_tag }}
+                                {{ profile_form.education_level }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if profile_form.institution %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.institution.label_tag }}
+                                {{ profile_form.institution }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if profile_form.graduation_year %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.graduation_year.label_tag }}
+                                {{ profile_form.graduation_year }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if profile_form.professional_title %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.professional_title.label_tag }}
+                                {{ profile_form.professional_title }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if profile_form.specialization %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.specialization.label_tag }}
+                                {{ profile_form.specialization }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if profile_form.years_of_experience %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.years_of_experience.label_tag }}
+                                {{ profile_form.years_of_experience }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Información Laboral -->
+                {% if target_profile.is_staff_member %}
+                <div class="form-section">
+                    <h5><i class="fas fa-building me-2"></i> Información Laboral</h5>
+                    <div class="row">
+                        {% if profile_form.department %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.department.label_tag }}
+                                {{ profile_form.department }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if profile_form.position %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.position.label_tag }}
+                                {{ profile_form.position }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if profile_form.hire_date %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.hire_date.label_tag }}
+                                {{ profile_form.hire_date }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if profile_form.work_schedule %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.work_schedule.label_tag }}
+                                {{ profile_form.work_schedule }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Información Familiar (solo estudiantes) -->
+                {% if target_profile.is_student %}
+                <div class="form-section">
+                    <h5><i class="fas fa-home me-2"></i> Información Familiar</h5>
+                    <div class="row">
+                        {% if profile_form.parent_guardian_name %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.parent_guardian_name.label_tag }}
+                                {{ profile_form.parent_guardian_name }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if profile_form.parent_guardian_phone %}
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                {{ profile_form.parent_guardian_phone.label_tag }}
+                                {{ profile_form.parent_guardian_phone }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if profile_form.parent_guardian_email %}
+                        <div class="col-12">
+                            <div class="field-group">
+                                {{ profile_form.parent_guardian_email.label_tag }}
+                                {{ profile_form.parent_guardian_email }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Biografía y Configuraciones -->
+                <div class="form-section">
+                    <h5><i class="fas fa-cog me-2"></i> Biografía y Configuraciones</h5>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="field-group">
+                                {{ profile_form.bio.label_tag }}
+                                {{ profile_form.bio }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                <div class="form-check">
+                                    {{ profile_form.notifications_enabled }}
+                                    {{ profile_form.notifications_enabled.label_tag }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="field-group">
+                                <div class="form-check">
+                                    {{ profile_form.email_notifications }}
+                                    {{ profile_form.email_notifications.label_tag }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="text-center mb-4">
+                    <button type="submit" class="btn btn-success btn-lg me-2">
+                        <i class="fas fa-save me-1"></i> Guardar Cambios
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                        <i class="fas fa-undo me-1"></i> Restablecer
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Panel Lateral -->
+        <div class="col-lg-4">
+            <!-- Estadísticas del Perfil -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Estadísticas del Perfil
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Completitud</span>
+                            <span class="font-weight-bold">{{ profile_completion }}%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-{% if profile_completion < 30 %}danger{% elif profile_completion < 70 %}warning{% else %}success{% endif %}" 
+                                 style="width: {{ profile_completion }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <i class="fas fa-calendar text-primary"></i>
+                            <p class="mb-1 mt-1"><small>Creado</small></p>
+                            <p class="font-weight-bold">{{ target_user.date_joined|date:"d/m/Y" }}</p>
+                        </div>
+                        <div class="col-6">
+                            <i class="fas fa-clock text-info"></i>
+                            <p class="mb-1 mt-1"><small>Último Acceso</small></p>
+                            <p class="font-weight-bold">
+                                {% if target_user.last_login %}
+                                    {{ target_user.last_login|date:"d/m/Y" }}
+                                {% else %}
+                                    Nunca
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if target_profile.age %}
+                    <div class="text-center mt-3">
+                        <i class="fas fa-birthday-cake text-warning"></i>
+                        <p class="mb-1 mt-1"><small>Edad</small></p>
+                        <p class="font-weight-bold">{{ target_profile.age }} años</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Información Específica del Rol -->
+            {% if target_profile.is_teacher and assigned_students %}
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-users me-2"></i>
+                        Estudiantes Asignados
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for student in assigned_students %}
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-user-graduate text-warning me-2"></i>
+                        <span>{{ student.first_name }} {{ student.last_name }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if target_profile.is_student and assigned_teacher %}
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>
+                        Profesor Asignado
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-user-tie text-success me-2"></i>
+                        <span>{{ assigned_teacher.first_name }} {{ assigned_teacher.last_name }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para Subir Avatar -->
+<div class="modal fade" id="avatarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-camera me-2"></i>
+                    Actualizar Avatar
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="avatarForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <input type="hidden" name="user_id" value="{{ target_user.id }}">
+                    <div class="mb-3">
+                        <label for="avatarFile" class="form-label">Seleccionar Nueva Imagen</label>
+                        <input type="file" class="form-control" id="avatarFile" name="avatar" 
+                               accept="image/*" required>
+                        <div class="form-text">
+                            Formatos permitidos: JPG, PNG, GIF, WebP. Tamaño máximo: 5MB.
+                        </div>
+                    </div>
+                    <div id="avatarPreview" class="text-center" style="display: none;">
+                        <img id="previewImage" class="rounded-circle" style="max-width: 150px; max-height: 150px;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-1"></i> Actualizar Avatar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Enviar formulario de perfil
+document.getElementById('profileForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {};
+    
+    // Convertir FormData a objeto JSON
+    for (let [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    
+    // Agregar ID del usuario
+    data.user_id = {{ target_user.id }};
+    
+    fetch("{% url 'administration:update_profile_api' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // Recargar para mostrar cambios
+        } else {
+            if (data.details) {
+                alert('Errores de validación:\n\n' + data.details.join('\n'));
+            } else {
+                alert('Error: ' + data.error);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al guardar el perfil.');
+    });
+});
+
+// Función para editar perfil (activar campos)
+function editProfile() {
+    const formElements = document.querySelectorAll('#profileForm input, #profileForm select, #profileForm textarea');
+    formElements.forEach(element => {
+        element.disabled = false;
+    });
+    
+    // Mostrar botones de acción
+    document.querySelector('.text-center.mb-4').style.display = 'block';
+}
+
+// Función para restablecer formulario
+function resetForm() {
+    document.getElementById('profileForm').reset();
+}
+
+// Función para subir avatar
+function uploadAvatar() {
+    const modal = new bootstrap.Modal(document.getElementById('avatarModal'));
+    modal.show();
+}
+
+// Preview de imagen antes de subir
+document.getElementById('avatarFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImage').src = e.target.result;
+            document.getElementById('avatarPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Enviar formulario de avatar
+document.getElementById('avatarForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch("{% url 'administration:upload_avatar_api' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // Recargar para mostrar el nuevo avatar
+        } else {
+            alert('Error: ' + (data.details ? data.details.join('\n') : data.error));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al subir avatar.');
+    });
+});
+</script>
+{% endblock %}

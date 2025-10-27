@@ -1,0 +1,493 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Estudiantes - Sistema Administrativo{% endblock %}
+
+{% block extra_css %}
+<style>
+.student-card {
+    transition: transform 0.2s ease-in-out;
+    border-left: 3px solid transparent;
+}
+
+.student-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.student-card.enrolled {
+    border-left-color: #007bff;
+}
+
+.student-card.active {
+    border-left-color: #28a745;
+}
+
+.student-card.inactive {
+    border-left-color: #ffc107;
+}
+
+.student-card.withdrawn {
+    border-left-color: #dc3545;
+}
+
+.stats-card {
+    border-left: 4px solid #007bff;
+}
+
+.grade-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-graduation-cap text-primary me-2"></i>
+            Gestión de Estudiantes
+        </h1>
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="showCreateStudentModal()">
+                <i class="fas fa-user-plus me-1"></i> Matricular Estudiante
+            </button>
+            <button class="btn btn-outline-secondary" onclick="showBulkActionsModal()">
+                <i class="fas fa-users-cog me-1"></i> Acciones Masivas
+            </button>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Estudiantes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_students }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Estudiantes Activos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ active_students }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Primaria
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ primary_students }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-child fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Bachillerato
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ secondary_students }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter me-2"></i>
+                Filtros y Búsqueda
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="filterGrade" class="form-label">Grado</label>
+                    <select class="form-select" id="filterGrade" onchange="filterStudents()">
+                        <option value="">Todos los grados</option>
+                        {% for grade_value, grade_label in grade_choices %}
+                        <option value="{{ grade_value }}">{{ grade_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="filterSection" class="form-label">Sección</label>
+                    <select class="form-select" id="filterSection" onchange="filterStudents()">
+                        <option value="">Todas las secciones</option>
+                        {% for section_value, section_label in section_choices %}
+                        <option value="{{ section_value }}">{{ section_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="filterStatus" class="form-label">Estado</label>
+                    <select class="form-select" id="filterStatus" onchange="filterStudents()">
+                        <option value="">Todos los estados</option>
+                        {% for status_value, status_label in status_choices %}
+                        <option value="{{ status_value }}">{{ status_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="searchStudent" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="searchStudent" placeholder="Nombre o documento..." onkeyup="filterStudents()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Estudiantes -->
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list me-2"></i>
+                Lista de Estudiantes ({{ enrollments.count }})
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if enrollments %}
+            <div class="row" id="studentsContainer">
+                {% for enrollment in enrollments %}
+                <div class="col-lg-6 col-xl-4 mb-3 student-item" 
+                     data-grade="{{ enrollment.grade }}" 
+                     data-section="{{ enrollment.section }}" 
+                     data-status="{{ enrollment.status }}"
+                     data-name="{{ enrollment.student.get_full_name|lower }}">
+                    <div class="card student-card {{ enrollment.status }} h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">{{ enrollment.student.get_full_name }}</h6>
+                                <small class="text-muted">@{{ enrollment.student.username }}</small>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="editStudent({{ enrollment.id }}); return false;">
+                                        <i class="fas fa-edit me-2"></i>Editar
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="changeStatus({{ enrollment.id }}, '{{ enrollment.status }}'); return false;">
+                                        <i class="fas fa-exchange-alt me-2"></i>Cambiar Estado
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" onclick="viewAcademicRecord({{ enrollment.student.id }}); return false;">
+                                        <i class="fas fa-chart-line me-2"></i>Historial Académico
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <span class="badge grade-badge bg-primary">{{ enrollment.full_grade }}</span>
+                                <span class="badge status-badge 
+                                    {% if enrollment.status == 'active' %}bg-success
+                                    {% elif enrollment.status == 'enrolled' %}bg-info
+                                    {% elif enrollment.status == 'inactive' %}bg-warning
+                                    {% elif enrollment.status == 'withdrawn' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ enrollment.get_status_display }}
+                                </span>
+                            </div>
+                            
+                            {% if enrollment.homeroom_teacher %}
+                            <div class="mb-2">
+                                <small class="text-muted">👨‍🏫 Director:</small>
+                                <div class="font-weight-bold text-primary">
+                                    {{ enrollment.homeroom_teacher.get_full_name }}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-2">
+                                <small class="text-muted">👨‍👩‍👧‍👦 Acudiente:</small>
+                                <div>{{ enrollment.parent_guardian_name }}</div>
+                                {% if enrollment.parent_guardian_phone %}
+                                <small class="text-muted">📞 {{ enrollment.parent_guardian_phone }}</small>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="text-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-plus me-1"></i>
+                                    Matriculado: {{ enrollment.enrollment_date|date:"d/m/Y" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-graduation-cap fa-3x text-gray-300 mb-3"></i>
+                <h5 class="text-muted">No hay estudiantes matriculados</h5>
+                <p class="text-muted">Comienza matriculando el primer estudiante.</p>
+                <button class="btn btn-primary" onclick="showCreateStudentModal()">
+                    <i class="fas fa-user-plus me-1"></i> Matricular Primer Estudiante
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Matricular Estudiante -->
+<div class="modal fade" id="createStudentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Matricular Nuevo Estudiante
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createStudentForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Información del Estudiante</h6>
+                            <div class="mb-3">
+                                <label for="studentUsername" class="form-label">Username *</label>
+                                <input type="text" class="form-control" id="studentUsername" name="username" required>
+                                <div class="form-text">Se usará para el acceso al sistema</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="studentFirstName" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="studentFirstName" name="first_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="studentLastName" class="form-label">Apellido *</label>
+                                <input type="text" class="form-control" id="studentLastName" name="last_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="studentEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="studentEmail" name="email">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Información Académica</h6>
+                            <div class="mb-3">
+                                <label for="studentGrade" class="form-label">Grado *</label>
+                                <select class="form-select" id="studentGrade" name="grade" required>
+                                    <option value="">Seleccione un grado...</option>
+                                    {% for grade_value, grade_label in grade_choices %}
+                                    <option value="{{ grade_value }}">{{ grade_label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="studentSection" class="form-label">Sección *</label>
+                                <select class="form-select" id="studentSection" name="section" required>
+                                    {% for section_value, section_label in section_choices %}
+                                    <option value="{{ section_value }}">{{ section_label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="studentTeacher" class="form-label">Profesor Director</label>
+                                <select class="form-select" id="studentTeacher" name="homeroom_teacher_id">
+                                    <option value="">Seleccione un profesor...</option>
+                                    {% for teacher in teachers %}
+                                    <option value="{{ teacher.id }}">
+                                        {{ teacher.get_full_name }} - {{ teacher.profile.subject_area|default:"Sin área" }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="studentYear" class="form-label">Año Académico</label>
+                                <input type="text" class="form-control" id="studentYear" name="academic_year" value="{{ current_year }}" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="text-primary">Información del Acudiente</h6>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="parentName" class="form-label">Nombre del Acudiente *</label>
+                                <input type="text" class="form-control" id="parentName" name="parent_guardian_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="parentPhone" class="form-label">Teléfono *</label>
+                                <input type="tel" class="form-control" id="parentPhone" name="parent_guardian_phone" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="parentEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="parentEmail" name="parent_guardian_email">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-1"></i> Matricular Estudiante
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Función para mostrar modal de crear estudiante
+function showCreateStudentModal() {
+    const modal = new bootstrap.Modal(document.getElementById('createStudentModal'));
+    modal.show();
+}
+
+// Enviar formulario de crear estudiante
+document.getElementById('createStudentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {};
+    
+    for (let [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    
+    fetch("{% url 'administration:create_student_enrollment_api' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al matricular estudiante.');
+    });
+});
+
+// Función para filtrar estudiantes
+function filterStudents() {
+    const gradeFilter = document.getElementById('filterGrade').value.toLowerCase();
+    const sectionFilter = document.getElementById('filterSection').value.toLowerCase();
+    const statusFilter = document.getElementById('filterStatus').value.toLowerCase();
+    const searchFilter = document.getElementById('searchStudent').value.toLowerCase();
+    
+    const students = document.querySelectorAll('.student-item');
+    
+    students.forEach(student => {
+        const grade = student.dataset.grade.toLowerCase();
+        const section = student.dataset.section.toLowerCase();
+        const status = student.dataset.status.toLowerCase();
+        const name = student.dataset.name.toLowerCase();
+        
+        const gradeMatch = !gradeFilter || grade.includes(gradeFilter);
+        const sectionMatch = !sectionFilter || section.includes(sectionFilter);
+        const statusMatch = !statusFilter || status.includes(statusFilter);
+        const nameMatch = !searchFilter || name.includes(searchFilter);
+        
+        if (gradeMatch && sectionMatch && statusMatch && nameMatch) {
+            student.style.display = 'block';
+        } else {
+            student.style.display = 'none';
+        }
+    });
+}
+
+// Función para editar estudiante (placeholder)
+function editStudent(enrollmentId) {
+    alert('Función de edición será implementada próximamente.');
+}
+
+// Función para cambiar estado (placeholder)
+function changeStatus(enrollmentId, currentStatus) {
+    alert('Función de cambio de estado será implementada próximamente.');
+}
+
+// Función para ver historial académico (placeholder)
+function viewAcademicRecord(studentId) {
+    alert('Función de historial académico será implementada próximamente.');
+}
+
+// Función para acciones masivas (placeholder)
+function showBulkActionsModal() {
+    alert('Función de acciones masivas será implementada próximamente.');
+}
+</script>
+{% endblock %}

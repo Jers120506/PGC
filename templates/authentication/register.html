@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Registro - Institución Educativa La Balsa{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/labalsa_styles.css' %}">
+<style>
+    body {
+        background: linear-gradient(135deg, var(--labalsa-green) 0%, var(--labalsa-light-green) 100%);
+        min-height: 100vh;
+    }
+    
+    .register-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    
+    .register-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        overflow: hidden;
+        width: 100%;
+        max-width: 600px;
+    }
+    
+    .register-header {
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+        position: relative;
+    }
+    
+    .register-icon {
+        width: 70px;
+        height: 70px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+    }
+    
+    .register-body {
+        padding: 30px;
+    }
+    
+    .form-floating {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .form-floating input,
+    .form-floating select {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 20px 15px 8px;
+        height: auto;
+        background: rgba(248, 249, 250, 0.8);
+        transition: all 0.3s ease;
+    }
+    
+    .form-floating input:focus,
+    .form-floating select:focus {
+        border-color: #27ae60;
+        background: white;
+        box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
+    }
+    
+    .form-floating label {
+        padding: 15px;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .register-btn {
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 15px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .register-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(39, 174, 96, 0.4);
+    }
+    
+    .step-progress {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+        gap: 10px;
+    }
+    
+    .step {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .step.active {
+        background: #27ae60;
+        transform: scale(1.2);
+    }
+    
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="register-card fade-in">
+        <div class="register-header">
+            <div class="register-icon">
+                <img src="{% static 'images/ESCUDO-IE-LA-BALSA.png' %}" alt="Escudo La Balsa" 
+                     style="width: 64px; height: 64px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));">
+            </div>
+            <h2 class="mb-2" style="font-weight: 700; color: var(--labalsa-green);">Registro de Estudiante</h2>
+            <h5 class="mb-1" style="color: var(--labalsa-green); font-weight: 600;">Institución Educativa La Balsa</h5>
+            <p class="mb-0" style="opacity: 0.8; color: #666;">Únete al Sistema Académico Institucional</p>
+        </div>
+        
+        <div class="register-body">
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                <i class="bi bi-person"></i> Nombre *
+                            </label>
+                            <input type="text" 
+                                   class="form-control {% if form.first_name.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.first_name.id_for_label }}" 
+                                   name="{{ form.first_name.name }}" 
+                                   value="{{ form.first_name.value|default:'' }}"
+                                   placeholder="Tu nombre"
+                                   required>
+                            {% if form.first_name.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.first_name.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                <i class="bi bi-person"></i> Apellido *
+                            </label>
+                            <input type="text" 
+                                   class="form-control {% if form.last_name.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.last_name.id_for_label }}" 
+                                   name="{{ form.last_name.name }}" 
+                                   value="{{ form.last_name.value|default:'' }}"
+                                   placeholder="Tu apellido"
+                                   required>
+                            {% if form.last_name.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.last_name.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">
+                            <i class="bi bi-at"></i> Nombre de Usuario *
+                        </label>
+                        <input type="text" 
+                               class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                               id="{{ form.username.id_for_label }}" 
+                               name="{{ form.username.name }}" 
+                               value="{{ form.username.value|default:'' }}"
+                               placeholder="Elige un nombre de usuario único"
+                               required>
+                        {% if form.username.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.username.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Solo letras, números y los caracteres @/./+/-/_ permitidos.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            <i class="bi bi-envelope"></i> Correo Electrónico *
+                        </label>
+                        <input type="email" 
+                               class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                               id="{{ form.email.id_for_label }}" 
+                               name="{{ form.email.name }}" 
+                               value="{{ form.email.value|default:'' }}"
+                               placeholder="tu@email.com"
+                               required>
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.email.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label">
+                                <i class="bi bi-lock"></i> Contraseña *
+                            </label>
+                            <input type="password" 
+                                   class="form-control {% if form.password1.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.password1.id_for_label }}" 
+                                   name="{{ form.password1.name }}"
+                                   placeholder="Crea una contraseña segura"
+                                   required>
+                            {% if form.password1.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.password1.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label">
+                                <i class="bi bi-lock-fill"></i> Confirmar Contraseña *
+                            </label>
+                            <input type="password" 
+                                   class="form-control {% if form.password2.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.password2.id_for_label }}" 
+                                   name="{{ form.password2.name }}"
+                                   placeholder="Repite la contraseña"
+                                   required>
+                            {% if form.password2.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.password2.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="terms" required>
+                        <label class="form-check-label" for="terms">
+                            Acepto los <a href="#" class="text-decoration-none">términos y condiciones</a> *
+                        </label>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-person-plus"></i> Crear Cuenta
+                        </button>
+                    </div>
+                </form>
+
+                <hr>
+
+                <div class="text-center">
+                    <p class="mb-0">
+                        ¿Ya tienes cuenta? 
+                        <a href="{% url 'authentication:login' %}" class="text-decoration-none">
+                            <i class="bi bi-box-arrow-in-right"></i> Inicia sesión aquí
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

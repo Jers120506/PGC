@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mis Estudiantes - Institución Educativa La Balsa{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/labalsa_styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="school-header text-center fade-in">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <img src="{% static 'images/ESCUDO-IE-LA-BALSA.png' %}" alt="Escudo Institución Educativa La Balsa" 
+                     class="school-shield">
+            </div>
+            <div class="col-md-8">
+                <h2 class="mb-1">Institución Educativa La Balsa</h2>
+                <p class="mb-1">Córdoba - Colombia</p>
+                <h4 class="mb-0">Mis Estudiantes</h4>
+            </div>
+            <div class="col-md-2 text-end">
+                <span class="badge bg-light text-dark">{{ user.get_full_name }}</span><br>
+                <small>Profesor</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary" style="background: linear-gradient(135deg, #2E8B57, #228B22) !important;">
+                    <h5 class="mb-0" style="color: white !important; font-weight: 700 !important;">
+                        <i class="bi bi-people" style="color: white !important;"></i> Lista de Estudiantes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if students %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Curso</th>
+                                        <th>Email</th>
+                                        <th>Última Actividad</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students %}
+                                    <tr>
+                                        <td>{{ student.user.get_full_name }}</td>
+                                        <td>{{ student.course.grade.name }} {{ student.course.section }}</td>
+                                        <td>{{ student.user.email }}</td>
+                                        <td>{{ student.user.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-outline-primary">Ver Detalles</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="bi bi-people fa-3x mb-3"></i>
+                            <h5>No hay estudiantes asignados</h5>
+                            <p>Los estudiantes aparecerán aquí cuando sean asignados a tus cursos.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

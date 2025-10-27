@@ -1,0 +1,502 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+{% if group %}Detalles del Grupo: {{ group.name }}{% else %}Grupo no encontrado{% endif %} - Sistema Administrativo
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.member-card {
+    transition: transform 0.2s ease-in-out;
+    border-left: 3px solid transparent;
+}
+
+.member-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.member-card.leader {
+    border-left-color: #dc3545;
+}
+
+.member-card.moderator {
+    border-left-color: #ffc107;
+}
+
+.member-card.member {
+    border-left-color: #28a745;
+}
+
+.member-card.observer {
+    border-left-color: #6c757d;
+}
+
+.member-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+.member-initials {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #007bff, #6f42c1);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.role-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.group-info-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.stats-card {
+    border-left: 4px solid #007bff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if group_not_found %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-danger text-center">
+                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                <h4>Grupo no encontrado</h4>
+                <p>El grupo solicitado no existe en el sistema.</p>
+                <a href="{% url 'administration:group_management' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Volver a Gestión de Grupos
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    
+    <!-- Header del Grupo -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-users text-warning me-2"></i>
+                        {{ group.name }}
+                    </h1>
+                    <p class="text-muted mb-0">{{ group.get_group_type_display }} • {{ group.member_count }} miembros</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="showAddMemberModal()">
+                        <i class="fas fa-user-plus me-1"></i> Agregar Miembro
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="editGroup({{ group.id }})">
+                        <i class="fas fa-edit me-1"></i> Editar Grupo
+                    </button>
+                    <a href="{% url 'administration:group_management' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Grupo -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card group-info-card shadow">
+                <div class="card-body">
+                    <h5 class="card-title text-white">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Información del Grupo
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Nombre:</strong> {{ group.name }}</p>
+                            <p class="mb-1"><strong>Tipo:</strong> {{ group.get_group_type_display }}</p>
+                            <p class="mb-1"><strong>Estado:</strong> 
+                                <span class="badge bg-light text-dark">
+                                    {% if group.is_active %}Activo{% else %}Inactivo{% endif %}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Creado por:</strong> {{ group.created_by.get_full_name }}</p>
+                            <p class="mb-1"><strong>Fecha de creación:</strong> {{ group.created_at|date:"d/m/Y H:i" }}</p>
+                            <p class="mb-1"><strong>Última actualización:</strong> {{ group.updated_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                    {% if group.description %}
+                    <div class="mt-3">
+                        <p class="mb-0"><strong>Descripción:</strong></p>
+                        <p class="mb-0">{{ group.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card stats-card shadow">
+                <div class="card-body">
+                    <h6 class="card-title text-primary">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Estadísticas
+                    </h6>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="h4 text-primary">{{ group.member_count }}</div>
+                            <small class="text-muted">Total Miembros</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 text-success">{{ group.leaders_count }}</div>
+                            <small class="text-muted">Líderes</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="small text-muted">
+                        <div class="d-flex justify-content-between">
+                            <span>Visible públicamente:</span>
+                            <span>{% if group.is_public %}Sí{% else %}No{% endif %}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Auto-unión permitida:</span>
+                            <span>{% if group.allow_self_join %}Sí{% else %}No{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Miembros -->
+    <div class="card shadow">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-users me-2"></i>
+                Miembros del Grupo ({{ members.count }})
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if members %}
+            <div class="row">
+                {% for membership in members %}
+                <div class="col-lg-6 col-xl-4 mb-3">
+                    <div class="card member-card {{ membership.role }} h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    {% if membership.user.profile.avatar %}
+                                        <img src="{{ membership.user.profile.avatar.url }}" class="member-avatar" alt="Avatar">
+                                    {% else %}
+                                        <div class="member-initials">
+                                            {{ membership.user.first_name.0|default:membership.user.username.0 }}{{ membership.user.last_name.0|default:'' }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ membership.user.get_full_name }}</h6>
+                                    <p class="text-muted mb-1">@{{ membership.user.username }}</p>
+                                    <span class="badge role-badge
+                                        {% if membership.role == 'leader' %}bg-danger
+                                        {% elif membership.role == 'moderator' %}bg-warning
+                                        {% elif membership.role == 'member' %}bg-success
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ membership.get_role_display }}
+                                    </span>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{% url 'administration:profile_detail' membership.user.id %}">
+                                            <i class="fas fa-user me-2"></i>Ver Perfil
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="changeRole({{ membership.user.id }}, '{{ membership.role }}'); return false;">
+                                            <i class="fas fa-user-tag me-2"></i>Cambiar Rol
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" href="#" onclick="removeMember({{ membership.user.id }}, '{{ membership.user.get_full_name }}'); return false;">
+                                            <i class="fas fa-user-minus me-2"></i>Remover
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-plus me-1"></i>
+                                    Unido el {{ membership.joined_at|date:"d/m/Y" }}
+                                    {% if membership.added_by %}
+                                        por {{ membership.added_by.get_full_name }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-3x text-gray-300 mb-3"></i>
+                <h5 class="text-muted">No hay miembros en este grupo</h5>
+                <p class="text-muted">Comienza agregando miembros al grupo.</p>
+                <button class="btn btn-primary" onclick="showAddMemberModal()">
+                    <i class="fas fa-user-plus me-1"></i> Agregar Primer Miembro
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+
+<!-- Modal para Agregar Miembro -->
+<div class="modal fade" id="addMemberModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Agregar Miembro al Grupo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addMemberForm">
+                <div class="modal-body">
+                    <input type="hidden" name="group_id" value="{{ group.id }}">
+                    <div class="mb-3">
+                        <label for="userId" class="form-label">Seleccionar Usuario *</label>
+                        <select class="form-select" id="userId" name="user_id" required>
+                            <option value="">Seleccione un usuario...</option>
+                            {% for user in available_users %}
+                            <option value="{{ user.id }}">
+                                {{ user.get_full_name }} (@{{ user.username }}) - {{ user.profile.get_role_display }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="memberRole" class="form-label">Rol en el Grupo *</label>
+                        <select class="form-select" id="memberRole" name="role" required>
+                            <option value="member">Miembro</option>
+                            <option value="moderator">Moderador</option>
+                            <option value="leader">Líder</option>
+                            <option value="observer">Observador</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-1"></i> Agregar Miembro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar Grupo (reutilizado del group_management.html) -->
+<div class="modal fade" id="editGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>
+                    Editar Grupo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editGroupForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editGroupId" name="group_id" value="{{ group.id }}">
+                    <div class="mb-3">
+                        <label for="editGroupName" class="form-label">Nombre del Grupo *</label>
+                        <input type="text" class="form-control" id="editGroupName" name="name" value="{{ group.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editGroupDescription" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="editGroupDescription" name="description" rows="3">{{ group.description }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editGroupType" class="form-label">Tipo de Grupo *</label>
+                        <select class="form-select" id="editGroupType" name="group_type" required>
+                            <option value="functional" {% if group.group_type == 'functional' %}selected{% endif %}>Funcional</option>
+                            <option value="academic" {% if group.group_type == 'academic' %}selected{% endif %}>Académico</option>
+                            <option value="departmental" {% if group.group_type == 'departmental' %}selected{% endif %}>Departamental</option>
+                            <option value="distribution" {% if group.group_type == 'distribution' %}selected{% endif %}>Lista de Distribución</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editAllowSelfJoin" name="allow_self_join" {% if group.allow_self_join %}checked{% endif %}>
+                            <label class="form-check-label" for="editAllowSelfJoin">
+                                Permitir que los usuarios se unan automáticamente
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editIsPublic" name="is_public" {% if group.is_public %}checked{% endif %}>
+                            <label class="form-check-label" for="editIsPublic">
+                                Grupo visible públicamente
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editIsActive" name="is_active" {% if group.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="editIsActive">
+                                Grupo activo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Función para mostrar modal de agregar miembro
+function showAddMemberModal() {
+    const modal = new bootstrap.Modal(document.getElementById('addMemberModal'));
+    modal.show();
+}
+
+// Enviar formulario de agregar miembro
+document.getElementById('addMemberForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {};
+    
+    for (let [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    
+    fetch("{% url 'administration:add_group_member_api' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al agregar miembro.');
+    });
+});
+
+// Función para editar grupo (simplificada para esta página)
+function editGroup(groupId) {
+    const modal = new bootstrap.Modal(document.getElementById('editGroupModal'));
+    modal.show();
+}
+
+// Enviar formulario de editar grupo
+document.getElementById('editGroupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {};
+    
+    for (let [key, value] of formData.entries()) {
+        if (this.querySelector(`[name="${key}"]`).type === 'checkbox') {
+            data[key] = this.querySelector(`[name="${key}"]`).checked;
+        } else {
+            data[key] = value;
+        }
+    }
+    
+    fetch("{% url 'administration:update_group_api' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al actualizar grupo.');
+    });
+});
+
+// Función para remover miembro
+function removeMember(userId, userName) {
+    if (confirm(`¿Estás seguro de que quieres remover a "${userName}" del grupo?\n\nEsta acción se puede deshacer agregando al usuario nuevamente.`)) {
+        fetch("{% url 'administration:remove_group_member_api' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({ 
+                group_id: {{ group.id }}, 
+                user_id: userId 
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión al remover miembro.');
+        });
+    }
+}
+
+// Función para cambiar rol (placeholder por ahora)
+function changeRole(userId, currentRole) {
+    alert('Función de cambio de rol será implementada próximamente.');
+}
+</script>
+{% endblock %}

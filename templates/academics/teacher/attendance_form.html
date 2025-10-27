@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista de Asistencia - {{ course.grade.name }} {{ course.section }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/labalsa_styles.css' %}">
+<style>
+    .attendance-form {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .student-row {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        background: #f8f9fa;
+    }
+    .student-row:hover {
+        background: #e9ecef;
+    }
+    .attendance-options {
+        display: flex;
+        gap: 10px;
+    }
+    .attendance-btn {
+        flex: 1;
+        min-height: 45px;
+    }
+    .school-header {
+        background: linear-gradient(135deg, #0d6efd, #6610f2);
+        color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="school-header text-center fade-in">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <img src="{% static 'images/ESCUDO-IE-LA-BALSA.png' %}" alt="Escudo Institución Educativa La Balsa" 
+                     class="school-shield">
+            </div>
+            <div class="col-md-8">
+                <h3 class="mb-1">Institución Educativa La Balsa</h3>
+                <h5 class="mb-0">Lista de Asistencia</h5>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'academics:quick_attendance' %}" class="btn btn-light btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="attendance-form">
+        <!-- Información de la clase -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary" style="background: linear-gradient(135deg, #2E8B57, #228B22) !important;">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0" style="color: white !important; font-weight: 700 !important;">
+                            <i class="fas fa-chalkboard me-2" style="color: white !important;"></i>{{ course.grade.name }} {{ course.section }}
+                        </h5>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <span class="badge bg-light text-dark">{{ subject.name }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Fecha:</strong> {{ date_selected|date:"d/m/Y" }}</p>
+                        <p class="mb-1"><strong>Profesor:</strong> {{ teacher.get_full_name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Total Estudiantes:</strong> {{ students.count }}</p>
+                        <p class="mb-1"><strong>Materia:</strong> {{ subject.name }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario de asistencia -->
+        <form id="attendanceForm" method="post" action="{% url 'academics:save_attendance' %}">
+            {% csrf_token %}
+            <input type="hidden" name="course_id" value="{{ course.id }}">
+            <input type="hidden" name="subject_id" value="{{ subject.id }}">
+            <input type="hidden" name="date" value="{{ date_selected|date:'Y-m-d' }}">
+            
+            <!-- Controles rápidos -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="mb-3">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-success w-100" onclick="markAll('present')">
+                                <i class="fas fa-check me-1"></i>Marcar Todos Presentes
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-danger w-100" onclick="markAll('absent')">
+                                <i class="fas fa-times me-1"></i>Marcar Todos Ausentes
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-secondary w-100" onclick="clearAll()">
+                                <i class="fas fa-eraser me-1"></i>Limpiar Todo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de estudiantes -->
+            <div class="card">
+                <div class="card-header bg-info" style="background: linear-gradient(135deg, #228B22, #2E8B57) !important;">
+                    <h6 class="mb-0" style="color: white !important; font-weight: 700 !important;">
+                        <i class="fas fa-users me-2" style="color: white !important;"></i>Lista de Estudiantes ({{ students.count }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for student in students %}
+                        <div class="student-row">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 40px; height: 40px;">
+                                            {{ student.user.first_name.0 }}{{ student.user.last_name.0 }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ student.user.get_full_name }}</h6>
+                                            <small class="text-muted">ID: {{ student.student_id }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="attendance-options">
+                                        <button type="button" 
+                                                class="btn btn-outline-success attendance-btn" 
+                                                onclick="setAttendance({{ student.id }}, 'present', this)"
+                                                data-student="{{ student.id }}" 
+                                                data-status="present">
+                                            <i class="fas fa-check me-1"></i>Presente
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-outline-danger attendance-btn" 
+                                                onclick="setAttendance({{ student.id }}, 'absent', this)"
+                                                data-student="{{ student.id }}" 
+                                                data-status="absent">
+                                            <i class="fas fa-times me-1"></i>Ausente
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-outline-warning attendance-btn" 
+                                                onclick="setAttendance({{ student.id }}, 'justified', this)"
+                                                data-student="{{ student.id }}" 
+                                                data-status="justified">
+                                            <i class="fas fa-exclamation me-1"></i>Justificado
+                                        </button>
+                                    </div>
+                                    <input type="hidden" 
+                                           name="attendance_{{ student.id }}" 
+                                           id="attendance_{{ student.id }}" 
+                                           value="">
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-user-times fa-3x mb-3"></i>
+                            <p>No hay estudiantes registrados en este curso</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <a href="{% url 'academics:quick_attendance' %}" class="btn btn-secondary btn-lg w-100">
+                        <i class="fas fa-arrow-left me-2"></i>Cancelar
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <button type="submit" class="btn btn-primary btn-lg w-100" id="saveBtn" disabled>
+                        <i class="fas fa-save me-2"></i>Guardar Asistencia
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Resumen -->
+        <div class="card mt-4" id="summary" style="display: none;">
+            <div class="card-body bg-light">
+                <h6 class="text-muted mb-3">
+                    <i class="fas fa-chart-pie me-2"></i>Resumen de Asistencia
+                </h6>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h4 class="text-success mb-0" id="presentCount">0</h4>
+                        <small class="text-muted">Presentes</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-danger mb-0" id="absentCount">0</h4>
+                        <small class="text-muted">Ausentes</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-warning mb-0" id="justifiedCount">0</h4>
+                        <small class="text-muted">Justificados</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let attendanceData = {};
+    
+    function setAttendance(studentId, status, button) {
+        // Remover estado activo de todos los botones del estudiante
+        const studentButtons = button.parentNode.querySelectorAll('.attendance-btn');
+        studentButtons.forEach(btn => {
+            btn.classList.remove('btn-success', 'btn-danger', 'btn-warning');
+            btn.classList.add('btn-outline-success', 'btn-outline-danger', 'btn-outline-warning');
+        });
+        
+        // Activar el botón seleccionado
+        button.classList.remove('btn-outline-success', 'btn-outline-danger', 'btn-outline-warning');
+        if (status === 'present') {
+            button.classList.add('btn-success');
+        } else if (status === 'absent') {
+            button.classList.add('btn-danger');
+        } else if (status === 'justified') {
+            button.classList.add('btn-warning');
+        }
+        
+        // Guardar el estado
+        attendanceData[studentId] = status;
+        document.getElementById(`attendance_${studentId}`).value = status;
+        
+        updateSummary();
+        checkFormCompletion();
+    }
+    
+    function markAll(status) {
+        const studentButtons = document.querySelectorAll(`[data-status="${status}"]`);
+        studentButtons.forEach(button => {
+            const studentId = button.getAttribute('data-student');
+            setAttendance(parseInt(studentId), status, button);
+        });
+    }
+    
+    function clearAll() {
+        const allButtons = document.querySelectorAll('.attendance-btn');
+        allButtons.forEach(btn => {
+            btn.classList.remove('btn-success', 'btn-danger', 'btn-warning');
+            btn.classList.add('btn-outline-' + btn.getAttribute('data-status'));
+        });
+        
+        attendanceData = {};
+        document.querySelectorAll('input[name^="attendance_"]').forEach(input => {
+            input.value = '';
+        });
+        
+        updateSummary();
+        checkFormCompletion();
+    }
+    
+    function updateSummary() {
+        const counts = {
+            present: Object.values(attendanceData).filter(status => status === 'present').length,
+            absent: Object.values(attendanceData).filter(status => status === 'absent').length,
+            justified: Object.values(attendanceData).filter(status => status === 'justified').length
+        };
+        
+        document.getElementById('presentCount').textContent = counts.present;
+        document.getElementById('absentCount').textContent = counts.absent;
+        document.getElementById('justifiedCount').textContent = counts.justified;
+        
+        // Mostrar resumen si hay datos
+        const summary = document.getElementById('summary');
+        if (counts.present + counts.absent + counts.justified > 0) {
+            summary.style.display = 'block';
+        } else {
+            summary.style.display = 'none';
+        }
+    }
+    
+    function checkFormCompletion() {
+        const totalStudents = {{ students.count }};
+        const markedStudents = Object.keys(attendanceData).length;
+        const saveBtn = document.getElementById('saveBtn');
+        
+        if (markedStudents > 0) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = `<i class="fas fa-save me-2"></i>Guardar Asistencia (${markedStudents}/${totalStudents})`;
+        } else {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Asistencia';
+        }
+    }
+    
+    // Confirmar antes de enviar
+    document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+        const markedStudents = Object.keys(attendanceData).length;
+        const totalStudents = {{ students.count }};
+        
+        if (markedStudents === 0) {
+            e.preventDefault();
+            alert('Debe marcar la asistencia de al menos un estudiante.');
+            return;
+        }
+        
+        if (markedStudents < totalStudents) {
+            const confirm = window.confirm(
+                `Solo ha marcado ${markedStudents} de ${totalStudents} estudiantes. \\n¿Está seguro de continuar?`
+            );
+            if (!confirm) {
+                e.preventDefault();
+            }
+        }
+    });
+</script>
+{% endblock %}

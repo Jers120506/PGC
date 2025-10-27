@@ -1,0 +1,934 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - Sistema Escolar</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        .nav-tabs .nav-link {
+            color: #6c757d;
+            border: none;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            background: none;
+            border-color: transparent;
+            border-bottom-color: #0d6efd;
+            font-weight: 600;
+        }
+        
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            border-top: none;
+        }
+        
+        .badge-role {
+            font-size: 0.75em;
+            font-weight: 500;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .status-active { color: #198754; }
+        .status-inactive { color: #dc3545; }
+        
+        .card-stats {
+            border-left: 4px solid #0d6efd;
+            transition: transform 0.2s ease;
+        }
+        
+        .card-stats:hover {
+            transform: translateY(-2px);
+        }
+        
+        .avatar-small {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .form-floating label {
+            color: #6c757d;
+        }
+        
+        .enrollment-info {
+            background-color: #f8f9fa;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'administration:dashboard' %}">
+                <i class="bi bi-mortarboard-fill me-2"></i>
+                Sistema Escolar
+            </a>
+            <div class="d-flex align-items-center text-white">
+                <i class="bi bi-person-circle me-2"></i>
+                {{ user.get_full_name|default:user.username }}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="h3 mb-3">
+                    <i class="bi bi-people-fill me-2 text-primary"></i>
+                    Gestión de Usuarios y Estudiantes
+                </h1>
+                
+                <!-- Estadísticas rápidas -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card card-stats h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5 class="card-title text-muted mb-1">Total Usuarios</h5>
+                                        <h3 class="mb-0">{{ total_users }}</h3>
+                                    </div>
+                                    <div class="text-primary">
+                                        <i class="bi bi-people fs-2"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card card-stats h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5 class="card-title text-muted mb-1">Estudiantes</h5>
+                                        <h3 class="mb-0 text-success">{{ total_students }}</h3>
+                                    </div>
+                                    <div class="text-success">
+                                        <i class="bi bi-mortarboard fs-2"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card card-stats h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5 class="card-title text-muted mb-1">Profesores</h5>
+                                        <h3 class="mb-0 text-info">{{ total_teachers }}</h3>
+                                    </div>
+                                    <div class="text-info">
+                                        <i class="bi bi-person-workspace fs-2"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card card-stats h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5 class="card-title text-muted mb-1">Activos</h5>
+                                        <h3 class="mb-0 text-warning">{{ active_users }}</h3>
+                                    </div>
+                                    <div class="text-warning">
+                                        <i class="bi bi-check-circle fs-2"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navegación por pestañas -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <ul class="nav nav-tabs card-header-tabs" id="userTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                            <i class="bi bi-people me-2"></i>
+                            Todos los Usuarios
+                            <span class="badge bg-primary ms-2">{{ total_users }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab">
+                            <i class="bi bi-mortarboard me-2"></i>
+                            Estudiantes
+                            <span class="badge bg-success ms-2">{{ total_students }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="teachers-tab" data-bs-toggle="tab" data-bs-target="#teachers" type="button" role="tab">
+                            <i class="bi bi-person-workspace me-2"></i>
+                            Profesores
+                            <span class="badge bg-info ms-2">{{ total_teachers }}</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body">
+                <div class="tab-content" id="userTabsContent">
+                    
+                    <!-- Tab: Todos los Usuarios -->
+                    <div class="tab-pane fade show active" id="users" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Lista de Usuarios</h5>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                                <i class="bi bi-plus-circle me-2"></i>Crear Usuario
+                            </button>
+                        </div>
+                        
+                        <!-- Filtros rápidos -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="searchUsers" placeholder="Buscar usuarios...">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filterRole">
+                                    <option value="">Todos los roles</option>
+                                    <option value="teacher">Profesores</option>
+                                    <option value="student">Estudiantes</option>
+                                    <option value="admin">Administradores</option>
+                                    <option value="secretary">Secretarios</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filterStatus">
+                                    <option value="">Todos los estados</option>
+                                    <option value="active">Activos</option>
+                                    <option value="inactive">Inactivos</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de usuarios -->
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Nombre Completo</th>
+                                        <th>Email</th>
+                                        <th>Rol</th>
+                                        <th>Estado</th>
+                                        <th>Último Acceso</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user_data in users %}
+                                    <tr data-role="{{ user_data.profile.role }}" data-status="{% if user_data.is_active %}active{% else %}inactive{% endif %}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if user_data.profile.avatar %}
+                                                    <img src="{{ user_data.profile.avatar.url }}" alt="Avatar" class="avatar-small me-2">
+                                                {% else %}
+                                                    <div class="avatar-small bg-secondary d-flex align-items-center justify-content-center me-2 text-white">
+                                                        {{ user_data.first_name|first|default:user_data.username|first|upper }}
+                                                    </div>
+                                                {% endif %}
+                                                <span class="fw-medium">{{ user_data.username }}</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ user_data.get_full_name|default:"—" }}</td>
+                                        <td>{{ user_data.email|default:"—" }}</td>
+                                        <td>
+                                            <span class="badge badge-role {% if user_data.profile.role == 'teacher' %}bg-info{% elif user_data.profile.role == 'student' %}bg-success{% elif user_data.profile.role == 'admin' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                {{ user_data.profile.get_role_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <i class="bi bi-circle-fill {% if user_data.is_active %}status-active{% else %}status-inactive{% endif %} me-1"></i>
+                                            {% if user_data.is_active %}Activo{% else %}Inactivo{% endif %}
+                                        </td>
+                                        <td>
+                                            {% if user_data.last_login %}
+                                                {{ user_data.last_login|date:"d/m/Y H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">Nunca</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="viewUser('{{ user_data.id }}')">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="editUser('{{ user_data.id }}')">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                {% if user_data.is_active %}
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="toggleUserStatus('{{ user_data.id }}', false)">
+                                                        <i class="bi bi-pause"></i>
+                                                    </button>
+                                                {% else %}
+                                                    <button type="button" class="btn btn-outline-success btn-sm" onclick="toggleUserStatus('{{ user_data.id }}', true)">
+                                                        <i class="bi bi-play"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                            No hay usuarios registrados
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Estudiantes -->
+                    <div class="tab-pane fade" id="students" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Gestión de Estudiantes</h5>
+                            <div>
+                                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#enrollStudentModal">
+                                    <i class="bi bi-person-plus me-2"></i>Matricular Estudiante
+                                </button>
+                                <button type="button" class="btn btn-outline-success" onclick="exportStudents()">
+                                    <i class="bi bi-download me-2"></i>Exportar Excel
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Estadísticas de estudiantes -->
+                        <div class="row g-3 mb-4">
+                            {% for grade, count in enrollment_stats.items %}
+                            <div class="col-md-2">
+                                <div class="card text-center">
+                                    <div class="card-body py-2">
+                                        <h6 class="card-title mb-1">{{ grade|title }}</h6>
+                                        <h4 class="mb-0 text-primary">{{ count }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Filtros para estudiantes -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" id="searchStudents" placeholder="Buscar estudiantes...">
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="filterGrade">
+                                    <option value="">Todos los grados</option>
+                                    {% for grade_choice in grade_choices %}
+                                        <option value="{{ grade_choice.0 }}">{{ grade_choice.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="filterSection">
+                                    <option value="">Todas las secciones</option>
+                                    {% for section_choice in section_choices %}
+                                        <option value="{{ section_choice.0 }}">Sección {{ section_choice.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="filterAcademicYear">
+                                    <option value="">Todos los años</option>
+                                    <option value="2025" selected>2025</option>
+                                    <option value="2024">2024</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de estudiantes -->
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="studentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Grado</th>
+                                        <th>Sección</th>
+                                        <th>Director de Curso</th>
+                                        <th>Estado Matrícula</th>
+                                        <th>Año Académico</th>
+                                        <th>Acudiente</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for enrollment in student_enrollments %}
+                                    <tr data-grade="{{ enrollment.grade }}" data-section="{{ enrollment.section }}" data-year="{{ enrollment.academic_year }}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if enrollment.student.profile.avatar %}
+                                                    <img src="{{ enrollment.student.profile.avatar.url }}" alt="Avatar" class="avatar-small me-2">
+                                                {% else %}
+                                                    <div class="avatar-small bg-success d-flex align-items-center justify-content-center me-2 text-white">
+                                                        {{ enrollment.student.first_name|first|default:enrollment.student.username|first|upper }}
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <div class="fw-medium">{{ enrollment.student.get_full_name }}</div>
+                                                    <small class="text-muted">{{ enrollment.student.username }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ enrollment.get_grade_display }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ enrollment.section }}</span>
+                                        </td>
+                                        <td>
+                                            {% if enrollment.homeroom_teacher %}
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-person-check me-2 text-info"></i>
+                                                    {{ enrollment.homeroom_teacher.get_full_name }}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">Sin asignar</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if enrollment.status == 'active' %}bg-success{% elif enrollment.status == 'enrolled' %}bg-info{% elif enrollment.status == 'inactive' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ enrollment.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ enrollment.academic_year }}</td>
+                                        <td>
+                                            {% if enrollment.parent_guardian_name %}
+                                                <div>
+                                                    <div class="fw-medium">{{ enrollment.parent_guardian_name }}</div>
+                                                    {% if enrollment.parent_guardian_phone %}
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-telephone me-1"></i>
+                                                            {{ enrollment.parent_guardian_phone }}
+                                                        </small>
+                                                    {% endif %}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">No registrado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="viewEnrollment('{{ enrollment.id }}')">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="editEnrollment('{{ enrollment.id }}')">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info btn-sm" onclick="changeGrade('{{ enrollment.id }}')">
+                                                    <i class="bi bi-arrow-up"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-4">
+                                            <i class="bi bi-mortarboard fs-1 d-block mb-2"></i>
+                                            No hay estudiantes matriculados
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Profesores -->
+                    <div class="tab-pane fade" id="teachers" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Gestión de Profesores</h5>
+                            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#createTeacherModal">
+                                <i class="bi bi-person-plus me-2"></i>Agregar Profesor
+                            </button>
+                        </div>
+
+                        <!-- Tabla de profesores -->
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Profesor</th>
+                                        <th>Email</th>
+                                        <th>Especialidad</th>
+                                        <th>Cursos como Director</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for teacher in teachers %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if teacher.profile.avatar %}
+                                                    <img src="{{ teacher.profile.avatar.url }}" alt="Avatar" class="avatar-small me-2">
+                                                {% else %}
+                                                    <div class="avatar-small bg-info d-flex align-items-center justify-content-center me-2 text-white">
+                                                        {{ teacher.first_name|first|default:teacher.username|first|upper }}
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <div class="fw-medium">{{ teacher.get_full_name }}</div>
+                                                    <small class="text-muted">{{ teacher.username }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ teacher.email|default:"—" }}</td>
+                                        <td>
+                                            {% if teacher.profile.specialty %}
+                                                <span class="badge bg-light text-dark">{{ teacher.profile.specialty }}</span>
+                                            {% else %}
+                                                <span class="text-muted">No especificada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% with teacher.homeroom_classes.count as homeroom_count %}
+                                                {% if homeroom_count > 0 %}
+                                                    <span class="badge bg-success">{{ homeroom_count }} curso{{ homeroom_count|pluralize }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">Ninguno</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </td>
+                                        <td>
+                                            <i class="bi bi-circle-fill {% if teacher.is_active %}status-active{% else %}status-inactive{% endif %} me-1"></i>
+                                            {% if teacher.is_active %}Activo{% else %}Inactivo{% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="viewTeacher('{{ teacher.id }}')">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="editTeacher('{{ teacher.id }}')">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info btn-sm" onclick="assignHomeroom('{{ teacher.id }}')">
+                                                    <i class="bi bi-house"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            <i class="bi bi-person-workspace fs-1 d-block mb-2"></i>
+                                            No hay profesores registrados
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales -->
+    <!-- Modal para crear usuario -->
+    <div class="modal fade" id="createUserModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-plus me-2"></i>Crear Nuevo Usuario
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createUserForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="username" name="username" required>
+                                    <label for="username">Nombre de usuario</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="role" name="role" required>
+                                        <option value="">Seleccionar rol</option>
+                                        <option value="teacher">Profesor</option>
+                                        <option value="student">Estudiante</option>
+                                        <option value="secretary">Secretario</option>
+                                        <option value="admin">Administrador</option>
+                                    </select>
+                                    <label for="role">Rol</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                    <label for="first_name">Nombres</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                    <label for="last_name">Apellidos</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="email" class="form-control" id="email" name="email">
+                                    <label for="email">Email</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="tel" class="form-control" id="phone" name="phone">
+                                    <label for="phone">Teléfono</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                    <label for="password">Contraseña</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
+                                    <label for="password_confirm">Confirmar contraseña</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="createUser()">
+                        <i class="bi bi-check-circle me-2"></i>Crear Usuario
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para matricular estudiante -->
+    <div class="modal fade" id="enrollStudentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-mortarboard me-2"></i>Matricular Estudiante
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="enrollStudentForm">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="student_id" name="student_id" required>
+                                        <option value="">Seleccionar estudiante</option>
+                                        {% for student in students %}
+                                            <option value="{{ student.id }}">{{ student.get_full_name }} ({{ student.username }})</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="student_id">Estudiante</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="grade" name="grade" required>
+                                        <option value="">Seleccionar grado</option>
+                                        {% for grade_choice in grade_choices %}
+                                            <option value="{{ grade_choice.0 }}">{{ grade_choice.1 }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="grade">Grado</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="section" name="section" required>
+                                        <option value="">Seleccionar sección</option>
+                                        {% for section_choice in section_choices %}
+                                            <option value="{{ section_choice.0 }}">Sección {{ section_choice.1 }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="section">Sección</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="academic_year" name="academic_year" value="2025" required>
+                                    <label for="academic_year">Año académico</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="homeroom_teacher" name="homeroom_teacher">
+                                        <option value="">Sin director asignado</option>
+                                        {% for teacher in teachers %}
+                                            <option value="{{ teacher.id }}">{{ teacher.get_full_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="homeroom_teacher">Director de curso</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="enrollment_status" name="status">
+                                        <option value="enrolled">Matriculado</option>
+                                        <option value="active" selected>Activo</option>
+                                        <option value="inactive">Inactivo</option>
+                                    </select>
+                                    <label for="enrollment_status">Estado de matrícula</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="enrollment-info">
+                            <h6 class="mb-3">
+                                <i class="bi bi-person-hearts me-2"></i>Información del Acudiente
+                            </h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="parent_name" name="parent_guardian_name">
+                                        <label for="parent_name">Nombre del acudiente</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input type="tel" class="form-control" id="parent_phone" name="parent_guardian_phone">
+                                        <label for="parent_phone">Teléfono del acudiente</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input type="email" class="form-control" id="parent_email" name="parent_guardian_email">
+                                <label for="parent_email">Email del acudiente</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="enrollStudent()">
+                        <i class="bi bi-check-circle me-2"></i>Matricular
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Funciones de filtrado
+        function filterTable(tableId, searchInputId, filterSelectors) {
+            const searchTerm = document.getElementById(searchInputId).value.toLowerCase();
+            const table = document.getElementById(tableId);
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                let showRow = false;
+
+                // Buscar en el texto de las celdas
+                for (let j = 0; j < cells.length; j++) {
+                    const cellText = cells[j].textContent.toLowerCase();
+                    if (cellText.includes(searchTerm)) {
+                        showRow = true;
+                        break;
+                    }
+                }
+
+                // Aplicar filtros adicionales
+                if (showRow && filterSelectors) {
+                    for (const selector of filterSelectors) {
+                        const filterValue = document.getElementById(selector.id).value;
+                        if (filterValue && row.getAttribute(selector.attribute) !== filterValue) {
+                            showRow = false;
+                            break;
+                        }
+                    }
+                }
+
+                row.style.display = showRow ? '' : 'none';
+            }
+        }
+
+        // Event listeners para filtros de usuarios
+        document.getElementById('searchUsers').addEventListener('input', function() {
+            filterTable('usersTable', 'searchUsers', [
+                { id: 'filterRole', attribute: 'data-role' },
+                { id: 'filterStatus', attribute: 'data-status' }
+            ]);
+        });
+
+        document.getElementById('filterRole').addEventListener('change', function() {
+            filterTable('usersTable', 'searchUsers', [
+                { id: 'filterRole', attribute: 'data-role' },
+                { id: 'filterStatus', attribute: 'data-status' }
+            ]);
+        });
+
+        document.getElementById('filterStatus').addEventListener('change', function() {
+            filterTable('usersTable', 'searchUsers', [
+                { id: 'filterRole', attribute: 'data-role' },
+                { id: 'filterStatus', attribute: 'data-status' }
+            ]);
+        });
+
+        // Event listeners para filtros de estudiantes
+        document.getElementById('searchStudents').addEventListener('input', function() {
+            filterTable('studentsTable', 'searchStudents', [
+                { id: 'filterGrade', attribute: 'data-grade' },
+                { id: 'filterSection', attribute: 'data-section' },
+                { id: 'filterAcademicYear', attribute: 'data-year' }
+            ]);
+        });
+
+        document.getElementById('filterGrade').addEventListener('change', function() {
+            filterTable('studentsTable', 'searchStudents', [
+                { id: 'filterGrade', attribute: 'data-grade' },
+                { id: 'filterSection', attribute: 'data-section' },
+                { id: 'filterAcademicYear', attribute: 'data-year' }
+            ]);
+        });
+
+        document.getElementById('filterSection').addEventListener('change', function() {
+            filterTable('studentsTable', 'searchStudents', [
+                { id: 'filterGrade', attribute: 'data-grade' },
+                { id: 'filterSection', attribute: 'data-section' },
+                { id: 'filterAcademicYear', attribute: 'data-year' }
+            ]);
+        });
+
+        document.getElementById('filterAcademicYear').addEventListener('change', function() {
+            filterTable('studentsTable', 'searchStudents', [
+                { id: 'filterGrade', attribute: 'data-grade' },
+                { id: 'filterSection', attribute: 'data-section' },
+                { id: 'filterAcademicYear', attribute: 'data-year' }
+            ]);
+        });
+
+        // Funciones de acción
+        function viewUser(userId) {
+            console.log('Ver usuario:', userId);
+            // Implementar vista de usuario
+        }
+
+        function editUser(userId) {
+            console.log('Editar usuario:', userId);
+            // Implementar edición de usuario
+        }
+
+        function toggleUserStatus(userId, activate) {
+            console.log('Cambiar estado usuario:', userId, activate);
+            // Implementar cambio de estado
+        }
+
+        function createUser() {
+            console.log('Crear usuario');
+            // Implementar creación de usuario
+        }
+
+        function viewEnrollment(enrollmentId) {
+            console.log('Ver matrícula:', enrollmentId);
+            // Implementar vista de matrícula
+        }
+
+        function editEnrollment(enrollmentId) {
+            console.log('Editar matrícula:', enrollmentId);
+            // Implementar edición de matrícula
+        }
+
+        function changeGrade(enrollmentId) {
+            console.log('Cambiar grado:', enrollmentId);
+            // Implementar cambio de grado
+        }
+
+        function enrollStudent() {
+            console.log('Matricular estudiante');
+            // Implementar matrícula de estudiante
+        }
+
+        function exportStudents() {
+            console.log('Exportar estudiantes');
+            // Implementar exportación
+        }
+
+        function viewTeacher(teacherId) {
+            console.log('Ver profesor:', teacherId);
+            // Implementar vista de profesor
+        }
+
+        function editTeacher(teacherId) {
+            console.log('Editar profesor:', teacherId);
+            // Implementar edición de profesor
+        }
+
+        function assignHomeroom(teacherId) {
+            console.log('Asignar dirección de curso:', teacherId);
+            // Implementar asignación de dirección de curso
+        }
+    </script>
+</body>
+</html>

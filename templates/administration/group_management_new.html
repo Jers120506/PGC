@@ -1,0 +1,550 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Horarios Académicos - Sistema Administrativo{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
+<style>
+.schedule-card {
+    transition: transform 0.2s ease-in-out;
+    border-left: 4px solid transparent;
+    min-height: 150px;
+}
+
+.schedule-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.schedule-card.assigned {
+    border-left-color: #28a745;
+}
+
+.schedule-card.unassigned {
+    border-left-color: #ffc107;
+}
+
+.schedule-card.conflict {
+    border-left-color: #dc3545;
+}
+
+.time-slot-card {
+    background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 5px;
+    min-height: 60px;
+    position: relative;
+}
+
+.schedule-item {
+    background: white;
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.schedule-item.matematicas { border-left: 4px solid #007bff; }
+.schedule-item.ciencias { border-left: 4px solid #28a745; }
+.schedule-item.lenguaje { border-left: 4px solid #ffc107; }
+.schedule-item.sociales { border-left: 4px solid #17a2b8; }
+.schedule-item.ingles { border-left: 4px solid #6f42c1; }
+.schedule-item.arte { border-left: 4px solid #e83e8c; }
+.schedule-item.educacion_fisica { border-left: 4px solid #fd7e14; }
+.schedule-item.other { border-left: 4px solid #6c757d; }
+
+.filters-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.calendar-header {
+    background: #343a40;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.calendar-day {
+    border: 1px solid #dee2e6;
+    padding: 10px;
+    min-height: 100px;
+    background: #f8f9fa;
+    vertical-align: top;
+}
+
+.avatar-placeholder {
+    background: linear-gradient(45deg, #007bff, #6f42c1);
+    border-radius: 50%;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Estilos mejorados para DataTables */
+.dataTables_wrapper .dataTables_filter {
+    display: none;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="card-title mb-0">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                Gestión de Horarios Académicos
+                            </h1>
+                            <p class="card-text mb-0">
+                                Sistema de horarios escolares - Año académico {{ current_year.name|default:"2025" }}
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <div class="btn-group">
+                                <button class="btn btn-light" onclick="showCreateScheduleModal()">
+                                    <i class="fas fa-plus me-1"></i>
+                                    Crear Horario
+                                </button>
+                                <a href="{% url 'administration:dashboard' %}" class="btn btn-outline-light">
+                                    <i class="fas fa-arrow-left me-1"></i>
+                                    Volver al Panel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Horarios Programados
+                            </div>
+                            <div class="h5 mb-0">{{ total_schedules|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Asignaciones Activas
+                            </div>
+                            <div class="h5 mb-0">{{ total_assignments|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Sin Programar
+                            </div>
+                            <div class="h5 mb-0">{{ unscheduled_assignments|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Salones Disponibles
+                            </div>
+                            <div class="h5 mb-0">{{ total_classrooms|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-door-open fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vista Principal del Calendario -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-calendar-week me-2"></i>
+                            Horarios Semanales
+                        </h6>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="exportSchedules()">
+                                <i class="fas fa-download me-1"></i>Exportar
+                            </button>
+                            <button class="btn btn-outline-success" onclick="generateSchedules()">
+                                <i class="fas fa-magic me-1"></i>Auto-generar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Filtros -->
+                    <div class="filters-container m-3">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">Grado</label>
+                                <select class="form-select" id="gradeFilter">
+                                    <option value="">Todos los grados</option>
+                                    {% for grade in grades %}
+                                        <option value="{{ grade.id }}">{{ grade.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">Curso</label>
+                                <select class="form-select" id="courseFilter">
+                                    <option value="">Todos los cursos</option>
+                                    {% for course in courses %}
+                                        <option value="{{ course.id }}">{{ course.grade.name }} {{ course.section }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">Salón</label>
+                                <select class="form-select" id="classroomFilter">
+                                    <option value="">Todos los salones</option>
+                                    {% for classroom in classrooms %}
+                                        <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">&nbsp;</label>
+                                <button class="btn btn-outline-secondary w-100" onclick="clearCalendarFilters()">
+                                    <i class="fas fa-times me-1"></i>Limpiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Calendario Semanal -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="calendar-header" style="width: 120px;">Horario</th>
+                                    {% for day_num, day_name in weekdays %}
+                                        <th class="calendar-header">{{ day_name }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for time_slot in time_slots %}
+                                <tr>
+                                    <td class="text-center bg-light font-weight-bold">
+                                        <div>{{ time_slot.name }}</div>
+                                        <small>{{ time_slot.start_time|time:"H:i" }} - {{ time_slot.end_time|time:"H:i" }}</small>
+                                    </td>
+                                    {% for day_num, day_name in weekdays %}
+                                    <td class="calendar-day" id="cell-{{ day_num }}-{{ time_slot.id }}">
+                                        {% for schedule in schedules %}
+                                            {% if schedule.weekday == day_num and schedule.time_slot.id == time_slot.id %}
+                                                <div class="schedule-item {{ schedule.subject_assignment.subject.area|default:'other' }}" 
+                                                     data-schedule-id="{{ schedule.id }}"
+                                                     onclick="editSchedule({{ schedule.id }})">
+                                                    <strong>{{ schedule.subject_assignment.subject.name }}</strong><br>
+                                                    <small>{{ schedule.subject_assignment.course.grade.name }} {{ schedule.subject_assignment.course.section }}</small><br>
+                                                    <small>{{ schedule.classroom.name }}</small><br>
+                                                    <small class="text-muted">{{ schedule.subject_assignment.teacher.get_full_name }}</small>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Acciones Rápidas -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tools me-2"></i>
+                        Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button onclick="showCreateAssignmentModal()" class="btn btn-success btn-lg w-100">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>
+                                Nueva Asignación
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button onclick="showCreateClassroomModal()" class="btn btn-info btn-lg w-100">
+                                <i class="fas fa-door-open me-2"></i>
+                                Nuevo Salón
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button onclick="manageTimeSlots()" class="btn btn-warning btn-lg w-100">
+                                <i class="fas fa-clock me-2"></i>
+                                Franjas Horarias
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button onclick="viewReports()" class="btn btn-secondary btn-lg w-100">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Reportes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Horario -->
+<div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scheduleModalLabel">
+                    <i class="fas fa-calendar-plus me-2"></i>
+                    <span id="scheduleModalTitle">Crear Nuevo Horario</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalTeacher" class="form-label">Profesor <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modalTeacher" required>
+                                <option value="">Seleccionar profesor...</option>
+                                {% for teacher in teachers %}
+                                    <option value="{{ teacher.id }}">{{ teacher.get_full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalSubject" class="form-label">Materia <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modalSubject" required>
+                                <option value="">Seleccionar materia...</option>
+                                {% for subject in subjects %}
+                                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalCourse" class="form-label">Curso <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modalCourse" required>
+                                <option value="">Seleccionar curso...</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.id }}">{{ course.grade.name }} {{ course.section }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalClassroom" class="form-label">Salón <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modalClassroom" required>
+                                <option value="">Seleccionar salón...</option>
+                                {% for classroom in classrooms %}
+                                    <option value="{{ classroom.id }}">{{ classroom.name }} ({{ classroom.capacity }} estudiantes)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalWeekday" class="form-label">Día de la Semana <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modalWeekday" required>
+                                <option value="">Seleccionar día...</option>
+                                {% for day_num, day_name in weekdays %}
+                                    <option value="{{ day_num }}">{{ day_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalTimeSlot" class="form-label">Franja Horaria <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modalTimeSlot" required>
+                                <option value="">Seleccionar horario...</option>
+                                {% for time_slot in time_slots %}
+                                    <option value="{{ time_slot.id }}">{{ time_slot.name }} ({{ time_slot.start_time|time:"H:i" }} - {{ time_slot.end_time|time:"H:i" }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Nota:</strong> El sistema verificará automáticamente conflictos de horarios antes de crear la programación.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-success" id="saveScheduleBtn" onclick="saveSchedule()">
+                    <i class="fas fa-save me-1"></i>
+                    <span id="saveScheduleText">Crear Horario</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery (necesario para DataTables) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+// Variables globales
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Función para mostrar modal de crear horario
+function showCreateScheduleModal() {
+    document.getElementById('scheduleForm').reset();
+    document.getElementById('scheduleModalTitle').textContent = 'Crear Nuevo Horario';
+    document.getElementById('saveScheduleText').textContent = 'Crear Horario';
+    
+    const modal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+    modal.show();
+}
+
+// Función para editar horario existente
+function editSchedule(scheduleId) {
+    alert('Funcionalidad de editar horario en desarrollo. ID: ' + scheduleId);
+}
+
+// Función para guardar horario
+function saveSchedule() {
+    alert('Funcionalidad de guardar horario en desarrollo');
+}
+
+// Función para exportar horarios
+function exportSchedules() {
+    alert('Funcionalidad de exportar horarios en desarrollo');
+}
+
+// Función para generar horarios automáticamente
+function generateSchedules() {
+    alert('Funcionalidad de auto-generar horarios en desarrollo');
+}
+
+// Función para limpiar filtros del calendario
+function clearCalendarFilters() {
+    document.getElementById('gradeFilter').value = '';
+    document.getElementById('courseFilter').value = '';
+    document.getElementById('classroomFilter').value = '';
+    // Aquí iría la lógica para actualizar la vista
+}
+
+// Funciones para acciones rápidas
+function showCreateAssignmentModal() {
+    alert('Modal de crear asignación en desarrollo');
+}
+
+function showCreateClassroomModal() {
+    alert('Modal de crear salón en desarrollo');
+}
+
+function manageTimeSlots() {
+    alert('Gestión de franjas horarias en desarrollo');
+}
+
+function viewReports() {
+    alert('Vista de reportes en desarrollo');
+}
+
+// Inicialización cuando se carga la página
+$(document).ready(function() {
+    console.log('Sistema de Horarios Académicos inicializado');
+    
+    // Aquí se pueden agregar más inicializaciones
+    // como listeners para los filtros, etc.
+});
+</script>
+{% endblock %}

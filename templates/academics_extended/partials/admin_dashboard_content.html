@@ -1,0 +1,118 @@
+<!-- Dashboard para Administradores -->
+<div class="row">
+    <!-- Estadísticas principales -->
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ total_students }}</div>
+                    <div class="stats-label">Estudiantes Activos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ total_teachers }}</div>
+                    <div class="stats-label">Profesores</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-school"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ total_courses }}</div>
+                    <div class="stats-label">Cursos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ total_subjects }}</div>
+                    <div class="stats-label">Materias</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Acciones rápidas -->
+    <div class="col-lg-6">
+        <div class="quick-actions">
+            <h5 class="mb-3"><i class="fas fa-bolt"></i> Acciones Rápidas</h5>
+            <a href="{% url 'academics_extended:student_list' %}" class="action-btn">
+                <i class="fas fa-users"></i> Ver Estudiantes
+            </a>
+            <a href="{% url 'academics_extended:course_list' %}" class="action-btn">
+                <i class="fas fa-school"></i> Gestionar Cursos
+            </a>
+            <a href="{% url 'academics_extended:subject_list' %}" class="action-btn">
+                <i class="fas fa-book"></i> Ver Materias
+            </a>
+            <a href="/admin/" class="action-btn">
+                <i class="fas fa-cogs"></i> Administración
+            </a>
+        </div>
+    </div>
+    
+    <!-- Matrículas recientes -->
+    <div class="col-lg-6">
+        <div class="recent-activity">
+            <h5 class="mb-3"><i class="fas fa-user-plus"></i> Matrículas Recientes</h5>
+            {% if recent_enrollments %}
+                {% for student in recent_enrollments %}
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ student.user.get_full_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ student.course }} - ID: {{ student.student_id }}</small>
+                            </div>
+                            <small class="text-muted">{{ student.enrollment_date }}</small>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No hay matrículas recientes</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if courses_with_low_enrollment %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h6><i class="fas fa-exclamation-triangle"></i> Cursos con Baja Matrícula</h6>
+            <ul class="mb-0">
+                {% for course in courses_with_low_enrollment %}
+                    <li>{{ course }} - {{ course.student_count }} estudiante{{ course.student_count|pluralize }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endif %}

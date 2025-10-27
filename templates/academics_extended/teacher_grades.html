@@ -1,0 +1,761 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load schedule_filters %}
+
+{% block title %}Gestión de Calificaciones - Sistema Académico{% endblock %}
+
+{% block extra_css %}
+<style>
+    .grades-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    
+    .course-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+    
+    .course-header {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        padding: 15px 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .course-header:hover {
+        background: linear-gradient(135deg, #0056b3, #004085);
+    }
+    
+    .course-header.active {
+        background: linear-gradient(135deg, #28a745, #20c997);
+    }
+    
+    .course-content {
+        display: none;
+        padding: 0;
+    }
+    
+    .course-content.active {
+        display: block;
+    }
+    
+    .subject-tabs {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 10px 20px;
+    }
+    
+    .subject-tab {
+        display: inline-block;
+        padding: 8px 16px;
+        margin-right: 10px;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    
+    .subject-tab:hover {
+        background: #e9ecef;
+    }
+    
+    .subject-tab.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    
+    .students-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+    
+    .students-table th,
+    .students-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .students-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .student-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 15px;
+        font-size: 0.9rem;
+    }
+    
+    .grade-form {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .activity-input {
+        width: 200px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .grade-input {
+        width: 70px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        text-align: center;
+        font-weight: bold;
+    }
+    
+    .activity-type {
+        width: 120px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .quick-grade-buttons {
+        display: flex;
+        gap: 3px;
+    }
+    
+    .btn-quick-grade {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: none;
+        font-weight: bold;
+        color: white;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-quick-grade:hover {
+        transform: scale(1.1);
+    }
+    
+    .btn-grade-5 { background: #28a745; }
+    .btn-grade-4 { background: #17a2b8; }
+    .btn-grade-3 { background: #ffc107; color: #212529; }
+    .btn-grade-2 { background: #fd7e14; }
+    .btn-grade-1 { background: #dc3545; }
+    
+    .btn-save {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 5px;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+    
+    .btn-save:hover {
+        transform: translateY(-1px);
+    }
+    
+    .average-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 0.9rem;
+        min-width: 50px;
+        text-align: center;
+    }
+    
+    .avg-excellent { background: #d4edda; color: #155724; }
+    .avg-good { background: #d1ecf1; color: #0c5460; }
+    .avg-regular { background: #fff3cd; color: #856404; }
+    .avg-poor { background: #f8d7da; color: #721c24; }
+    
+    .grades-history {
+        font-size: 0.8rem;
+        color: #6c757d;
+        max-width: 200px;
+    }
+    
+    .stats-summary {
+        background: linear-gradient(135deg, #e9ecef, #f8f9fa);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border-left: 4px solid #007bff;
+    }
+    
+    @media (max-width: 768px) {
+        .students-table {
+            font-size: 0.8rem;
+        }
+        
+        .grade-form {
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .activity-input {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Encabezado -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-primary mb-0">
+                    <i class="fas fa-star"></i> Calificaciones por Curso
+                </h2>
+                <div class="d-flex gap-3">
+                    <span class="badge bg-primary fs-6">
+                        {{ total_students }} estudiante{{ total_students|pluralize }}
+                    </span>
+                    <span class="badge bg-success fs-6">
+                        {{ total_grades_count }} calificación{{ total_grades_count|pluralize:"es" }}
+                    </span>
+                </div>
+            </div>
+
+            {% if courses_data %}
+                <div class="row">
+                    <div class="col-lg-9">
+                        <!-- Cursos -->
+                        {% for course_name, course_data in courses_data.items %}
+                            <div class="course-card">
+                                <div class="course-header" onclick="toggleCourse('{{ course_name|slugify_custom }}')">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="mb-1">
+                                                <i class="fas fa-users"></i> {{ course_name }}
+                                            </h5>
+                                            <small>
+                                                {{ course_data.students|length }} estudiante{{ course_data.students|length|pluralize }} • 
+                                                {{ course_data.subjects|length }} materia{{ course_data.subjects|length|pluralize }}
+                                            </small>
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-chevron-down" id="icon-{{ course_name|slugify_custom }}"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="course-content" id="content-{{ course_name|slugify_custom }}">
+                                    <!-- Tabs de materias -->
+                                    <div class="subject-tabs">
+                                        <span class="text-muted me-3">Materias:</span>
+                                        {% for subject_assignment in course_data.subjects %}
+                                            <span class="subject-tab {% if forloop.first %}active{% endif %}" 
+                                                  onclick="showSubject('{{ course_name|slugify_custom }}', {{ subject_assignment.subject.id }})">
+                                                {{ subject_assignment.subject.name }}
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <!-- Tabla de estudiantes por materia -->
+                                    {% for subject_assignment in course_data.subjects %}
+                                        <div class="subject-content-{{ course_name|slugify_custom }} subject-{{ subject_assignment.subject.id }}" 
+                                             style="{% if not forloop.first %}display: none;{% endif %}">
+                                            
+                                            <div class="p-3">
+                                                <h6 class="text-primary mb-3">
+                                                    <i class="fas fa-book"></i> {{ subject_assignment.subject.name }} - {{ course_name }}
+                                                </h6>
+                                                
+                                                <table class="students-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="width: 250px;">Estudiante</th>
+                                                            <th style="width: 80px;">Promedio</th>
+                                                            <th style="width: 200px;">Actividad</th>
+                                                            <th style="width: 120px;">Tipo</th>
+                                                            <th style="width: 70px;">Nota</th>
+                                                            <th style="width: 150px;">Rápido</th>
+                                                            <th style="width: 80px;">Acción</th>
+                                                            <th>Historial</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for student in course_data.students %}
+                                                            {% with student_data=course_data.students_data|get_item:student.id %}
+                                                                {% with subject_grades=student_data.subject_grades|get_item:subject_assignment.subject.id %}
+                                                                    <tr>
+                                                                        <td>
+                                                                            <div class="student-info">
+                                                                                <div class="student-avatar">
+                                                                                    {{ student.user.first_name.0|upper }}{{ student.user.last_name.0|upper }}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <strong>{{ student.user.get_full_name }}</strong><br>
+                                                                                    <small class="text-muted">{{ student.student_id }}</small>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <span class="average-badge 
+                                                                                  {% if subject_grades.average >= 4.5 %}avg-excellent
+                                                                                  {% elif subject_grades.average >= 3.5 %}avg-good
+                                                                                  {% elif subject_grades.average >= 3.0 %}avg-regular
+                                                                                  {% else %}avg-poor{% endif %}">
+                                                                                {{ subject_grades.average|floatformat:1 }}
+                                                                            </span><br>
+                                                                            <small class="text-muted">{{ subject_grades.count }} nota{{ subject_grades.count|pluralize }}</small>
+                                                                        </td>
+                                                                        <td>
+                                                                            <input type="text" class="activity-input" placeholder="Nombre actividad..." 
+                                                                                   id="activity-{{ student.id }}-{{ subject_assignment.subject.id }}">
+                                                                        </td>
+                                                                        <td>
+                                                                            <select class="activity-type" id="type-{{ student.id }}-{{ subject_assignment.subject.id }}">
+                                                                                <option value="quiz">Quiz</option>
+                                                                                <option value="exam">Examen</option>
+                                                                                <option value="homework">Tarea</option>
+                                                                                <option value="participation">Participación</option>
+                                                                                <option value="project">Proyecto</option>
+                                                                            </select>
+                                                                        </td>
+                                                                        <td>
+                                                                            <input type="number" class="grade-input" min="1" max="5" step="0.1" 
+                                                                                   placeholder="0.0" id="grade-{{ student.id }}-{{ subject_assignment.subject.id }}">
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="quick-grade-buttons">
+                                                                                <button class="btn-quick-grade btn-grade-5" 
+                                                                                        onclick="setQuickGrade({{ student.id }}, {{ subject_assignment.subject.id }}, 5.0)"
+                                                                                        title="5.0">5</button>
+                                                                                <button class="btn-quick-grade btn-grade-4" 
+                                                                                        onclick="setQuickGrade({{ student.id }}, {{ subject_assignment.subject.id }}, 4.0)"
+                                                                                        title="4.0">4</button>
+                                                                                <button class="btn-quick-grade btn-grade-3" 
+                                                                                        onclick="setQuickGrade({{ student.id }}, {{ subject_assignment.subject.id }}, 3.0)"
+                                                                                        title="3.0">3</button>
+                                                                                <button class="btn-quick-grade btn-grade-2" 
+                                                                                        onclick="setQuickGrade({{ student.id }}, {{ subject_assignment.subject.id }}, 2.0)"
+                                                                                        title="2.0">2</button>
+                                                                                <button class="btn-quick-grade btn-grade-1" 
+                                                                                        onclick="setQuickGrade({{ student.id }}, {{ subject_assignment.subject.id }}, 1.0)"
+                                                                                        title="1.0">1</button>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <button class="btn-save" onclick="saveGrade({{ student.id }}, {{ subject_assignment.subject.id }})">
+                                                                                <i class="fas fa-save"></i>
+                                                                            </button>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="grades-history">
+                                                                                {% if subject_grades.grades %}
+                                                                                    {% for grade in subject_grades.grades|slice:":3" %}
+                                                                                        <small>{{ grade.activity_name }}: <strong>{{ grade.grade_value }}</strong></small><br>
+                                                                                    {% endfor %}
+                                                                                    {% if subject_grades.grades|length > 3 %}
+                                                                                        <small class="text-muted">... y {{ subject_grades.grades|length|add:"-3" }} más</small>
+                                                                                    {% endif %}
+                                                                                {% else %}
+                                                                                    <small class="text-muted">Sin calificaciones</small>
+                                                                                {% endif %}
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                {% endwith %}
+                                                            {% endwith %}
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-lg-3">
+                        <!-- Estadísticas generales -->
+                        <div class="stats-summary">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-chart-bar"></i> Resumen General
+                            </h5>
+                            
+                            <div class="stat-item">
+                                <h3 class="text-primary mb-1">{{ courses_data|length }}</h3>
+                                <small class="text-muted">Curso{{ courses_data|length|pluralize }}</small>
+                            </div>
+                            
+                            <div class="stat-item">
+                                <h3 class="text-success mb-1">{{ total_students }}</h3>
+                                <small class="text-muted">Estudiante{{ total_students|pluralize }}</small>
+                            </div>
+                            
+                            <div class="stat-item">
+                                <h3 class="text-info mb-1">{{ total_grades_count }}</h3>
+                                <small class="text-muted">Calificación{{ total_grades_count|pluralize:"es" }}</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Estadísticas por materia -->
+                        {% if subject_stats %}
+                            <div class="grades-container">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-medal"></i> Estadísticas por Materia
+                                </h5>
+                                
+                                {% for subject_name, stats in subject_stats.items %}
+                                    <div class="stat-item">
+                                        <h6 class="mb-2">{{ subject_name }}</h6>
+                                        <small class="text-muted">{{ stats.course }}</small>
+                                        <div class="row text-center mt-2">
+                                            <div class="col-6">
+                                                <strong class="text-primary">{{ stats.average }}</strong><br>
+                                                <small class="text-muted">Promedio</small>
+                                            </div>
+                                            <div class="col-6">
+                                                <strong class="text-info">{{ stats.total_grades }}</strong><br>
+                                                <small class="text-muted">Notas</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Actividad reciente -->
+                        <div class="grades-container">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-clock"></i> Últimas Calificaciones
+                            </h5>
+                            
+                            {% for grade in recent_grades %}
+                                <div class="mb-2 p-2 bg-light rounded">
+                                    <strong>{{ grade.student.user.get_full_name }}</strong><br>
+                                    <small class="text-muted">{{ grade.subject.name }} - {{ grade.activity_name }}</small><br>
+                                    <span class="badge bg-primary">{{ grade.grade_value }}</span>
+                                    <small class="text-muted">{{ grade.date_recorded|date:"d/m" }}</small>
+                                </div>
+                            {% empty %}
+                                <p class="text-muted text-center">No hay actividad reciente</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-star fa-5x text-muted mb-4"></i>
+                    <h3 class="text-muted mb-3">No tienes cursos asignados</h3>
+                    <p class="text-muted fs-5">
+                        Contacta al coordinador académico para obtener tus asignaciones.
+                    </p>
+                    <a href="{% url 'academics_extended:dashboard' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Script para calificaciones individuales -->
+<script>
+// Control de tabs de cursos
+function toggleCourse(courseId) {
+    const content = document.getElementById('content-' + courseId);
+    const icon = document.getElementById('icon-' + courseId);
+    const header = icon.closest('.course-header');
+    
+    if (content.style.display === 'none' || !content.style.display) {
+        content.style.display = 'block';
+        content.classList.add('active');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        header.classList.add('active');
+    } else {
+        content.style.display = 'none';
+        content.classList.remove('active');
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        header.classList.remove('active');
+    }
+}
+
+// Control de tabs de materias
+function showSubject(courseId, subjectId) {
+    // Ocultar todas las materias del curso
+    const allSubjects = document.querySelectorAll('.subject-content-' + courseId);
+    allSubjects.forEach(subject => subject.style.display = 'none');
+    
+    // Mostrar la materia seleccionada
+    const targetSubject = document.querySelector('.subject-content-' + courseId + '.subject-' + subjectId);
+    if (targetSubject) {
+        targetSubject.style.display = 'block';
+    }
+    
+    // Actualizar tabs activos
+    const courseTabs = document.querySelectorAll('.course-card .subject-tab');
+    courseTabs.forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+// Establecer calificación rápida
+function setQuickGrade(studentId, subjectId, grade) {
+    const input = document.getElementById(`grade-${studentId}-${subjectId}`);
+    input.value = grade;
+    
+    // Efecto visual
+    input.style.background = '#e7f3ff';
+    input.style.borderColor = '#007bff';
+    setTimeout(() => {
+        input.style.background = '';
+        input.style.borderColor = '#ddd';
+    }, 1000);
+    
+    // Auto-focus en el botón guardar
+    const saveButton = input.closest('tr').querySelector('.btn-save');
+    saveButton.style.background = '#ffc107';
+    setTimeout(() => {
+        saveButton.style.background = '';
+    }, 1500);
+}
+
+// Obtener token CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Guardar calificación individual con AJAX
+function saveGrade(studentId, subjectId) {
+    const activity = document.getElementById(`activity-${studentId}-${subjectId}`).value.trim();
+    const type = document.getElementById(`type-${studentId}-${subjectId}`).value;
+    const grade = document.getElementById(`grade-${studentId}-${subjectId}`).value;
+    
+    // Validaciones frontend
+    if (!activity) {
+        alert('❌ Por favor ingresa el nombre de la actividad');
+        document.getElementById(`activity-${studentId}-${subjectId}`).focus();
+        return;
+    }
+    
+    if (!grade || grade < 1 || grade > 5) {
+        alert('❌ Por favor ingresa una calificación válida entre 1.0 y 5.0');
+        document.getElementById(`grade-${studentId}-${subjectId}`).focus();
+        return;
+    }
+    
+    // UI feedback
+    const button = event.target;
+    const originalContent = button.innerHTML;
+    const row = button.closest('tr');
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    row.style.opacity = '0.6';
+    
+    // Datos para enviar
+    const requestData = {
+        student_id: studentId,
+        subject_id: subjectId,
+        activity_name: activity,
+        activity_type: type,
+        grade_value: parseFloat(grade)
+    };
+    
+    // Enviar via AJAX
+    fetch('{% url "academics_extended:teacher_grades" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Éxito
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            button.style.background = '#28a745';
+            
+            // Actualizar promedio en la interfaz
+            const averageElement = row.querySelector('.average-badge');
+            if (averageElement) {
+                averageElement.textContent = data.new_average;
+                
+                // Actualizar clase de color del promedio
+                averageElement.className = 'average-badge ';
+                if (data.new_average >= 4.5) {
+                    averageElement.className += 'avg-excellent';
+                } else if (data.new_average >= 3.5) {
+                    averageElement.className += 'avg-good';
+                } else if (data.new_average >= 3.0) {
+                    averageElement.className += 'avg-regular';
+                } else {
+                    averageElement.className += 'avg-poor';
+                }
+            }
+            
+            // Actualizar contador de notas
+            const countElement = row.querySelector('.average-badge').nextElementSibling;
+            if (countElement) {
+                countElement.innerHTML = `<small class="text-muted">${data.grade_count} nota${data.grade_count !== 1 ? 's' : ''}</small>`;
+            }
+            
+            // Limpiar formulario
+            document.getElementById(`activity-${studentId}-${subjectId}`).value = '';
+            document.getElementById(`grade-${studentId}-${subjectId}`).value = '';
+            
+            // Mostrar mensaje de éxito
+            showNotification('success', data.message);
+            
+        } else {
+            // Error
+            button.innerHTML = '<i class="fas fa-times"></i>';
+            button.style.background = '#dc3545';
+            showNotification('error', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.innerHTML = '<i class="fas fa-times"></i>';
+        button.style.background = '#dc3545';
+        showNotification('error', 'Error de conexión. Inténtalo de nuevo.');
+    })
+    .finally(() => {
+        // Restaurar UI después de 2 segundos
+        setTimeout(() => {
+            button.innerHTML = originalContent;
+            button.style.background = '';
+            button.disabled = false;
+            row.style.opacity = '';
+        }, 2000);
+    });
+}
+
+// Mostrar notificaciones
+function showNotification(type, message) {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Agregar al DOM
+    document.body.appendChild(notification);
+    
+    // Auto-remove después de 3 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Validación en tiempo real
+document.addEventListener('DOMContentLoaded', function() {
+    // Abrir primer curso por defecto
+    const firstCourse = document.querySelector('.course-header');
+    if (firstCourse) {
+        firstCourse.click();
+    }
+    
+    // Validación de campos de calificación
+    document.querySelectorAll('.grade-input').forEach(input => {
+        input.addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            const saveButton = this.closest('tr').querySelector('.btn-save');
+            
+            if (value < 1 || value > 5 || isNaN(value)) {
+                this.style.borderColor = '#dc3545';
+                saveButton.disabled = true;
+            } else {
+                this.style.borderColor = '#28a745';
+                saveButton.disabled = false;
+            }
+        });
+    });
+    
+    // Validación de campos de actividad
+    document.querySelectorAll('.activity-input').forEach(input => {
+        input.addEventListener('input', function() {
+            const saveButton = this.closest('tr').querySelector('.btn-save');
+            const gradeInput = this.closest('tr').querySelector('.grade-input');
+            
+            if (this.value.trim().length < 2) {
+                this.style.borderColor = '#dc3545';
+                saveButton.disabled = true;
+            } else {
+                this.style.borderColor = '#28a745';
+                if (gradeInput.value && gradeInput.value >= 1 && gradeInput.value <= 5) {
+                    saveButton.disabled = false;
+                }
+            }
+        });
+    });
+    
+    // Enter para guardar
+    document.querySelectorAll('.grade-input, .activity-input').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const saveButton = this.closest('tr').querySelector('.btn-save');
+                if (!saveButton.disabled) {
+                    saveButton.click();
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

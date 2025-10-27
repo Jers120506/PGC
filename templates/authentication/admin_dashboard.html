@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Panel de Administración{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header de Administrador -->
+            <div class="glass-card mb-4">
+                <div class="card-body text-center">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <div class="admin-avatar">
+                                <i class="bi bi-shield-check" style="font-size: 4rem; color: #dc3545;"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-9 text-md-start">
+                            <h1 class="display-5 fw-bold mb-2">
+                                Panel de Administración
+                            </h1>
+                            <p class="lead mb-0">
+                                Bienvenido {{ user.get_full_name|default:user.username }}
+                                <span class="role-badge">
+                                    <i class="bi bi-shield-check"></i> Administrador
+                                </span>
+                            </p>
+                            <p class="mb-0" style="opacity: 0.8;">
+                                Gestiona usuarios y permisos del sistema
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas de Usuarios -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="glass-card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-people-fill" style="font-size: 2.5rem; color: #0d6efd;"></i>
+                            <h3 class="mt-2 fw-bold">{{ total_users }}</h3>
+                            <p class="text-muted mb-0">Total Usuarios</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-mortarboard-fill" style="font-size: 2.5rem; color: #ffc107;"></i>
+                            <h3 class="mt-2 fw-bold">{{ total_teachers }}</h3>
+                            <p class="text-muted mb-0">Profesores</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-person-fill" style="font-size: 2.5rem; color: #20c997;"></i>
+                            <h3 class="mt-2 fw-bold">{{ total_students }}</h3>
+                            <p class="text-muted mb-0">Estudiantes</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-shield-check-fill" style="font-size: 2.5rem; color: #dc3545;"></i>
+                            <h3 class="mt-2 fw-bold">{{ total_admins }}</h3>
+                            <p class="text-muted mb-0">Administradores</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones Principales -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="glass-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-people" style="font-size: 2rem; color: #0d6efd;"></i>
+                                <h4 class="ms-3 mb-0">Gestión de Usuarios</h4>
+                            </div>
+                            <p class="text-muted mb-3">
+                                Administra todos los usuarios del sistema: estudiantes, profesores y administradores.
+                            </p>
+                            <div class="d-grid">
+                                <a href="{% url 'authentication:user_list' %}" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-list-ul"></i> Ver Todos los Usuarios
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-person-plus" style="font-size: 2rem; color: #198754;"></i>
+                                <h4 class="ms-3 mb-0">Crear Usuarios</h4>
+                            </div>
+                            <p class="text-muted mb-3">
+                                Crea nuevos usuarios: profesores con todos los roles o estudiantes directamente.
+                            </p>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'authentication:admin_create_user' %}" class="btn btn-success">
+                                    <i class="bi bi-person-badge"></i> Crear Profesor
+                                </a>
+                                <a href="{% url 'authentication:admin_create_student' %}" class="btn btn-primary">
+                                    <i class="bi bi-person-plus-fill"></i> Crear Estudiante
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nueva fila para Asignar Estudiantes -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="glass-card">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center mb-3 mb-md-0">
+                                        <i class="bi bi-diagram-3" style="font-size: 2.5rem; color: #6f42c1;"></i>
+                                        <div class="ms-3">
+                                            <h4 class="mb-1">Asignar Estudiantes</h4>
+                                            <p class="text-muted mb-0">
+                                                Asigna estudiantes a profesores específicos para organizar el sistema educativo.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-md-end">
+                                    <a href="{% url 'authentication:assign_students' %}" class="btn btn-purple btn-lg">
+                                        <i class="bi bi-people-fill me-1"></i> Gestionar Asignaciones
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usuarios Recientes -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock-history"></i> Usuarios Recientes
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_users %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Usuario</th>
+                                            <th>Nombre Completo</th>
+                                            <th>Email</th>
+                                            <th>Rol</th>
+                                            <th>Fecha de Registro</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for recent_user in recent_users %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ recent_user.username }}</strong>
+                                            </td>
+                                            <td>{{ recent_user.get_full_name|default:'-' }}</td>
+                                            <td>{{ recent_user.email }}</td>
+                                            <td>
+                                                {% if recent_user.profile.role == 'admin' %}
+                                                    <span class="badge bg-danger">Administrador</span>
+                                                {% elif recent_user.profile.role == 'teacher' %}
+                                                    <span class="badge bg-warning text-dark">Profesor</span>
+                                                {% else %}
+                                                    <span class="badge bg-info">Estudiante</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ recent_user.date_joined|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="text-muted mt-3">No hay usuarios recientes.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-weight: 600;
+    border: 2px solid rgba(220, 53, 69, 0.2);
+}
+
+.admin-avatar {
+    background: rgba(220, 53, 69, 0.1);
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border: 3px solid rgba(220, 53, 69, 0.2);
+}
+
+.btn-purple {
+    background: linear-gradient(135deg, #6f42c1, #8b5cf6);
+    border: none;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-purple:hover {
+    background: linear-gradient(135deg, #5d35a3, #7c3aed);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(111, 66, 193, 0.4);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Usuarios - Sistema Administrativo{% endblock %}
+
+{% block extra_css %}
+<style>
+.debug-info {
+    background-color: #f8f9fa;
+    padding: 5px;
+    margin: 5px 0;
+    border: 1px solid #dee2e6;
+    border-radius: 3px;
+    font-size: 0.8em;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1>🔧 TEST - Gestión de Usuarios</h1>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Test de Botones de Acción</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Rol</th>
+                                    <th>Estado</th>
+                                    <th>Debug Info</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in all_users %}
+                                <tr>
+                                    <td><strong>{{ user.username }}</strong></td>
+                                    <td>
+                                        {% if user.profile %}
+                                            {{ user.profile.role }}
+                                        {% else %}
+                                            Sin perfil
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.is_active %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="debug-info">
+                                            <strong>ID:</strong> {{ user.id }}<br>
+                                            <strong>Superuser:</strong> {{ user.is_superuser }}<br>
+                                            <strong>Profile:</strong> {% if user.profile %}{{ user.profile.role }}{% else %}None{% endif %}<br>
+                                            <strong>Botones que deben aparecer:</strong><br>
+                                            - Editar: SÍ<br>
+                                            - Activar/Desact: {% if not user.is_superuser %}SÍ{% else %}NO{% endif %}<br>
+                                            - Reset Pass: SÍ<br>
+                                            - Eliminar: {% if not user.is_superuser and user.profile and user.profile.role != 'admin' %}SÍ{% else %}NO{% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <!-- Botón Editar - SIEMPRE visible -->
+                                            <button class="btn btn-sm btn-outline-primary" title="Editar">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </button>
+                                            
+                                            <!-- Botón Activar/Desactivar - NO para superusuarios -->
+                                            {% if not user.is_superuser %}
+                                            <button class="btn btn-sm btn-outline-warning" title="Toggle Status">
+                                                <i class="fas fa-user-slash"></i> Toggle
+                                            </button>
+                                            {% endif %}
+                                            
+                                            <!-- Botón Reset Password - SIEMPRE visible -->
+                                            <button class="btn btn-sm btn-outline-info" title="Reset Password">
+                                                <i class="fas fa-key"></i> Reset
+                                            </button>
+                                            
+                                            <!-- Botón Eliminar - Solo NO-admin y NO-superuser -->
+                                            {% if not user.is_superuser and user.profile and user.profile.role != 'admin' %}
+                                            <button class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <i class="fas fa-trash"></i> Eliminar
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No hay usuarios</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

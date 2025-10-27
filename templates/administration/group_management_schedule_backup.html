@@ -1,0 +1,869 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Horarios Académicos - Sistema Administrativo{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
+<style>
+.schedule-card {
+    transition: transform 0.2s ease-in-out;
+    border-left: 4px solid transparent;
+    min-height: 150px;
+}
+
+.schedule-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.schedule-card.assigned {
+    border-left-color: #28a745;
+}
+
+.schedule-card.unassigned {
+    border-left-color: #ffc107;
+}
+
+.schedule-card.conflict {
+    border-left-color: #dc3545;
+}
+
+.time-slot-card {
+    background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 5px;
+    min-height: 60px;
+    position: relative;
+}
+
+.schedule-item {
+    background: white;
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    font-size: 0.8rem;
+}
+
+.schedule-item.math { border-left: 4px solid #007bff; }
+.schedule-item.science { border-left: 4px solid #28a745; }
+.schedule-item.language { border-left: 4px solid #ffc107; }
+.schedule-item.social { border-left: 4px solid #17a2b8; }
+.schedule-item.english { border-left: 4px solid #6f42c1; }
+.schedule-item.art { border-left: 4px solid #e83e8c; }
+.schedule-item.pe { border-left: 4px solid #fd7e14; }
+.schedule-item.other { border-left: 4px solid #6c757d; }
+
+.filters-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.calendar-header {
+    background: #343a40;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.calendar-day {
+    border: 1px solid #dee2e6;
+    padding: 10px;
+    min-height: 400px;
+    background: #f8f9fa;
+}
+
+/* Estilos mejorados para DataTables */
+.dataTables_wrapper .dataTables_filter {
+    display: none;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+</style>
+{% endblock %}
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.stats-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.group-type-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="card-title mb-0">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                Gestión de Horarios Académicos
+                            </h1>
+                            <p class="card-text mb-0">
+                                Administración de horarios, asignaciones y calendario escolar
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <div class="btn-group">
+                                <button class="btn btn-light" onclick="showCreateScheduleModal()">
+                                    <i class="fas fa-plus me-1"></i>
+                                    Crear Horario
+                                </button>
+                                <a href="{% url 'administration:dashboard' %}" class="btn btn-outline-light">
+                                    <i class="fas fa-arrow-left me-1"></i>
+                                    Volver al Panel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestañas de Navegación -->
+    <ul class="nav nav-tabs mb-4" id="scheduleTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendar-view" type="button" role="tab">
+                <i class="fas fa-calendar-week me-2"></i>Vista de Calendario
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments-view" type="button" role="tab">
+                <i class="fas fa-chalkboard-teacher me-2"></i>Asignaciones
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="classrooms-tab" data-bs-toggle="tab" data-bs-target="#classrooms-view" type="button" role="tab">
+                <i class="fas fa-door-open me-2"></i>Salones
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics-view" type="button" role="tab">
+                <i class="fas fa-chart-bar me-2"></i>Estadísticas
+            </button>
+        </li>
+    </ul>
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Horarios Programados
+                            </div>
+                            <div class="h5 mb-0">{{ total_schedules }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Asignaciones Activas
+                            </div>
+                            <div class="h5 mb-0">{{ total_assignments }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Sin Programar
+                            </div>
+                            <div class="h5 mb-0">{{ unscheduled_assignments }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Salones Disponibles
+                            </div>
+                            <div class="h5 mb-0">{{ total_classrooms }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-door-open fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido de Pestañas -->
+    <div class="tab-content" id="scheduleTabsContent">
+        
+        <!-- Vista de Calendario -->
+        <div class="tab-pane fade show active" id="calendar-view" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-calendar-week me-2"></i>
+                                    Horarios Semanales - {{ current_year.name }}
+                                </h6>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick="exportSchedules()">
+                                        <i class="fas fa-download me-1"></i>Exportar
+                                    </button>
+                                    <button class="btn btn-outline-success" onclick="generateSchedules()">
+                                        <i class="fas fa-magic me-1"></i>Auto-generar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <!-- Filtros -->
+                            <div class="filters-container m-3">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label small text-muted">Grado</label>
+                                        <select class="form-select" id="gradeFilter">
+                                            <option value="">Todos los grados</option>
+                                            {% for grade in grades %}
+                                                <option value="{{ grade.id }}">{{ grade.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small text-muted">Curso</label>
+                                        <select class="form-select" id="courseFilter">
+                                            <option value="">Todos los cursos</option>
+                                            {% for course in courses %}
+                                                <option value="{{ course.id }}">{{ course.grade.name }} {{ course.section }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small text-muted">Salón</label>
+                                        <select class="form-select" id="classroomFilter">
+                                            <option value="">Todos los salones</option>
+                                            {% for classroom in classrooms %}
+                                                <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small text-muted">&nbsp;</label>
+                                        <button class="btn btn-outline-secondary w-100" onclick="clearCalendarFilters()">
+                                            <i class="fas fa-times me-1"></i>Limpiar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Calendario Semanal -->
+                            <div class="table-responsive">
+                                <table class="table table-bordered mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="calendar-header" style="width: 120px;">Horario</th>
+                                            {% for day_num, day_name in weekdays %}
+                                                <th class="calendar-header">{{ day_name }}</th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for time_slot in time_slots %}
+                                        <tr>
+                                            <td class="text-center bg-light font-weight-bold">
+                                                <div>{{ time_slot.name }}</div>
+                                                <small>{{ time_slot.start_time|time:"H:i" }} - {{ time_slot.end_time|time:"H:i" }}</small>
+                                            </td>
+                                            {% for day_num, day_name in weekdays %}
+                                            <td class="calendar-day" id="cell-{{ day_num }}-{{ time_slot.id }}">
+                                                {% for schedule in schedules %}
+                                                    {% if schedule.weekday == day_num and schedule.time_slot.id == time_slot.id %}
+                                                        <div class="schedule-item {{ schedule.subject_assignment.subject.area|default:'other' }}" 
+                                                             data-schedule-id="{{ schedule.id }}"
+                                                             onclick="editSchedule({{ schedule.id }})">
+                                                            <strong>{{ schedule.subject_assignment.subject.name }}</strong><br>
+                                                            <small>{{ schedule.subject_assignment.course.grade.name }} {{ schedule.subject_assignment.course.section }}</small><br>
+                                                            <small>{{ schedule.classroom.name }}</small><br>
+                                                            <small class="text-muted">{{ schedule.subject_assignment.teacher.get_full_name }}</small>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </td>
+                                            {% endfor %}
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+                                        Total de Grupos
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ total_groups }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Grupos Activos
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ active_groups }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Grupos Académicos
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ academic_groups }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-graduation-cap fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Grupos Funcionales
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ functional_groups }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-cogs fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de Grupos -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-list me-2"></i>
+                        Lista de Grupos ({{ groups.count }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if groups %}
+                    <div class="row">
+                        {% for group in groups %}
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="card group-card {{ group.group_type }} h-100">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">{{ group.name }}</h6>
+                                        <span class="badge bg-secondary group-type-badge">
+                                            {{ group.get_group_type_display }}
+                                        </span>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="{% url 'administration:group_detail' group.id %}">
+                                                <i class="fas fa-eye me-2"></i>Ver Detalles
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="editGroup({{ group.id }}); return false;">
+                                                <i class="fas fa-edit me-2"></i>Editar
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteGroup({{ group.id }}, '{{ group.name }}'); return false;">
+                                                <i class="fas fa-trash me-2"></i>Eliminar
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text text-muted mb-3">
+                                        {{ group.description|default:"Sin descripción"|truncatechars:80 }}
+                                    </p>
+                                    
+                                    <!-- Información del Profesor Monitor -->
+                                    {% for membership in group.memberships.all %}
+                                        {% if membership.role == 'leader' and membership.user.profile.role == 'teacher' %}
+                                        <div class="mb-3 p-2 bg-light rounded">
+                                            <small class="text-muted">👨‍🏫 Director de Grupo:</small>
+                                            <div class="font-weight-bold text-primary">
+                                                {{ membership.user.get_full_name }}
+                                            </div>
+                                            {% if membership.user.profile.subject_area %}
+                                            <small class="text-muted">{{ membership.user.profile.subject_area }}</small>
+                                            {% endif %}
+                                        </div>
+                                        {% break %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    <div class="row text-center">
+                                        <div class="col-6">
+                                            <div class="text-primary font-weight-bold">{{ group.member_count }}</div>
+                                            <small class="text-muted">Miembros</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-success font-weight-bold">{{ group.leaders_count }}</div>
+                                            <small class="text-muted">Líderes</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Preview de miembros -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">Miembros:</small>
+                                        <div class="d-flex flex-wrap align-items-center mt-1">
+                                            {% for membership in group.memberships.all|slice:":5" %}
+                                                {% if membership.is_active %}
+                                                    {% if membership.user.profile.avatar %}
+                                                        <img src="{{ membership.user.profile.avatar.url }}" class="member-avatar" 
+                                                             title="{{ membership.user.get_full_name }} ({{ membership.get_role_display }})">
+                                                    {% else %}
+                                                        <div class="member-initials" 
+                                                             title="{{ membership.user.get_full_name }} ({{ membership.get_role_display }})">
+                                                            {{ membership.user.first_name.0|default:membership.user.username.0 }}{{ membership.user.last_name.0|default:'' }}
+                                                        </div>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% if group.member_count > 5 %}
+                                                <small class="text-muted ms-2">+{{ group.member_count|add:"-5" }} más</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer text-muted">
+                                    <small>
+                                        <i class="fas fa-user me-1"></i>Creado por {{ group.created_by.get_full_name }}
+                                        <br>
+                                        <i class="fas fa-clock me-1"></i>{{ group.created_at|date:"d/m/Y H:i" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-gray-300 mb-3"></i>
+                        <h5 class="text-muted">No hay grupos creados</h5>
+                        <p class="text-muted">Comienza creando tu primer grupo de usuarios.</p>
+                        <button class="btn btn-primary" onclick="showCreateGroupModal()">
+                            <i class="fas fa-plus me-1"></i> Crear Primer Grupo
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear Grupo -->
+<div class="modal fade" id="createGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-users me-2"></i>
+                    Crear Nuevo Grupo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createGroupForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="groupName" class="form-label">Nombre del Grupo *</label>
+                        <input type="text" class="form-control" id="groupName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="groupDescription" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="groupDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="groupType" class="form-label">Tipo de Grupo *</label>
+                        <select class="form-select" id="groupType" name="group_type" required>
+                            <option value="academic">Académico (Grados/Salones)</option>
+                            <option value="departmental">Departamental (Por Área)</option>
+                            <option value="functional">Funcional (Administrativo)</option>
+                            <option value="distribution">Lista de Distribución</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="groupMonitor" class="form-label">Profesor Monitor/Director de Grupo</label>
+                        <select class="form-select" id="groupMonitor" name="monitor_id">
+                            <option value="">Seleccione un profesor...</option>
+                            {% for teacher in teachers %}
+                            <option value="{{ teacher.id }}">
+                                {{ teacher.get_full_name }} - {{ teacher.profile.subject_area|default:"Sin área asignada" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">El profesor monitor será asignado automáticamente como líder del grupo</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="initialMembers" class="form-label">Miembros Iniciales (Opcional)</label>
+                        <select class="form-select" id="initialMembers" name="initial_members" multiple size="4">
+                            {% for user in available_users %}
+                            <option value="{{ user.id }}">
+                                {{ user.get_full_name }} (@{{ user.username }}) - {{ user.profile.get_role_display }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Mantén presionado Ctrl para seleccionar múltiples usuarios</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="allowSelfJoin" name="allow_self_join">
+                            <label class="form-check-label" for="allowSelfJoin">
+                                Permitir que los usuarios se unan automáticamente
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isPublic" name="is_public" checked>
+                            <label class="form-check-label" for="isPublic">
+                                Grupo visible públicamente
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Crear Grupo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar Grupo -->
+<div class="modal fade" id="editGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>
+                    Editar Grupo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editGroupForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editGroupId" name="group_id">
+                    <div class="mb-3">
+                        <label for="editGroupName" class="form-label">Nombre del Grupo *</label>
+                        <input type="text" class="form-control" id="editGroupName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editGroupDescription" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="editGroupDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editGroupType" class="form-label">Tipo de Grupo *</label>
+                        <select class="form-select" id="editGroupType" name="group_type" required>
+                            <option value="functional">Funcional</option>
+                            <option value="academic">Académico</option>
+                            <option value="departmental">Departamental</option>
+                            <option value="distribution">Lista de Distribución</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editAllowSelfJoin" name="allow_self_join">
+                            <label class="form-check-label" for="editAllowSelfJoin">
+                                Permitir que los usuarios se unan automáticamente
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editIsPublic" name="is_public">
+                            <label class="form-check-label" for="editIsPublic">
+                                Grupo visible públicamente
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editIsActive" name="is_active">
+                            <label class="form-check-label" for="editIsActive">
+                                Grupo activo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Función para mostrar modal de crear grupo
+function showCreateGroupModal() {
+    const modal = new bootstrap.Modal(document.getElementById('createGroupModal'));
+    modal.show();
+}
+
+// Enviar formulario de crear grupo
+document.getElementById('createGroupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {};
+    
+    // Convertir FormData a objeto JSON
+    for (let [key, value] of formData.entries()) {
+        const field = this.querySelector(`[name="${key}"]`);
+        if (field.type === 'checkbox') {
+            data[key] = field.checked;
+        } else if (field.multiple) {
+            // Manejar select múltiple
+            if (!data[key]) data[key] = [];
+            data[key].push(value);
+        } else {
+            data[key] = value;
+        }
+    }
+    
+    // Procesar select múltiple manualmente para initial_members
+    const initialMembersSelect = this.querySelector('#initialMembers');
+    if (initialMembersSelect) {
+        data.initial_members = Array.from(initialMembersSelect.selectedOptions).map(option => option.value);
+    }
+    
+    fetch("{% url 'administration:create_group_api' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al crear grupo.');
+    });
+});
+
+// Función para editar grupo
+function editGroup(groupId) {
+    // Obtener datos del grupo desde el DOM (basado en la tarjeta del grupo)
+    const groupCard = document.querySelector(`[onclick*="editGroup(${groupId})"]`).closest('.group-card');
+    const groupName = groupCard.querySelector('h6').textContent;
+    const groupDescription = groupCard.querySelector('.card-text').textContent.trim();
+    const groupTypeBadge = groupCard.querySelector('.group-type-badge').textContent.trim();
+    
+    // Mapear el tipo de grupo display a valor
+    const typeMap = {
+        'Funcional': 'functional',
+        'Académico': 'academic',
+        'Departamental': 'departmental',
+        'Lista de Distribución': 'distribution'
+    };
+    
+    // Llenar el formulario de edición
+    document.getElementById('editGroupId').value = groupId;
+    document.getElementById('editGroupName').value = groupName;
+    document.getElementById('editGroupDescription').value = groupDescription === 'Sin descripción' ? '' : groupDescription;
+    document.getElementById('editGroupType').value = typeMap[groupTypeBadge] || 'functional';
+    
+    // Por defecto, marcar como activo y público (asumimos que los grupos mostrados están activos)
+    document.getElementById('editIsActive').checked = true;
+    document.getElementById('editIsPublic').checked = true;
+    document.getElementById('editAllowSelfJoin').checked = false;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('editGroupModal'));
+    modal.show();
+}
+
+// Enviar formulario de editar grupo
+document.getElementById('editGroupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {};
+    
+    // Convertir FormData a objeto JSON
+    for (let [key, value] of formData.entries()) {
+        if (this.querySelector(`[name="${key}"]`).type === 'checkbox') {
+            data[key] = this.querySelector(`[name="${key}"]`).checked;
+        } else {
+            data[key] = value;
+        }
+    }
+    
+    fetch("{% url 'administration:update_group_api' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al actualizar grupo.');
+    });
+});
+
+// Función para eliminar grupo
+function deleteGroup(groupId, groupName) {
+    if (confirm(`¿Estás seguro de que quieres eliminar el grupo "${groupName}"?\n\nEsta acción eliminará todos los miembros del grupo y no se puede deshacer.`)) {
+        fetch("{% url 'administration:delete_group_api' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({ group_id: groupId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión al eliminar grupo.');
+        });
+    }
+}
+</script>
+{% endblock %}

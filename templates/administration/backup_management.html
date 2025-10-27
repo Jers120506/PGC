@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Respaldos - Administración{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="card-title mb-0">
+                                <i class="fas fa-database me-2"></i>
+                                Gestión de Respaldos
+                            </h1>
+                            <p class="card-text mb-0">
+                                Administración de copias de seguridad del sistema
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'administration:dashboard' %}" class="btn btn-dark">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Volver al Panel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estado de la Base de Datos -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Estado de la Base de Datos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Archivo:</strong> {{ db_info.file_name }}</p>
+                            <p><strong>Tamaño:</strong> {{ db_info.size_mb }} MB</p>
+                            <p><strong>Ubicación:</strong> <code>{{ db_info.full_path }}</code></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Última modificación:</strong> {{ db_info.last_modified|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Total de tablas:</strong> {{ db_info.table_count }}</p>
+                            <p><strong>Estado:</strong> 
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Operativa
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card border-left-warning">
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="h1 text-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h5 class="card-title">Importante</h5>
+                        <p class="card-text">
+                            Los respaldos son fundamentales para proteger la información del colegio.
+                        </p>
+                        <div class="text-muted">
+                            <small>Recomendación: Respaldo diario</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones de Respaldo -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Crear Respaldo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Crear una copia de seguridad completa de la base de datos actual.
+                    </p>
+                    
+                    <div class="mb-3">
+                        <label for="backupName" class="form-label">Nombre del respaldo:</label>
+                        <input type="text" class="form-control" id="backupName" 
+                               placeholder="backup_{{ today|date:'Y_m_d' }}" 
+                               value="backup_{{ today|date:'Y_m_d' }}">
+                        <div class="form-text">
+                            Se agregará automáticamente la fecha y hora
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="backupDescription" class="form-label">Descripción (opcional):</label>
+                        <textarea class="form-control" id="backupDescription" rows="2" 
+                                  placeholder="Describe el motivo de este respaldo..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button class="btn btn-success" onclick="createBackup()">
+                            <i class="fas fa-save me-2"></i>
+                            Crear Respaldo Ahora
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-upload me-2"></i>
+                        Restaurar Respaldo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Restaurar la base de datos desde un archivo de respaldo.
+                    </p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>¡Atención!</strong> Esta acción reemplazará todos los datos actuales.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="backupFile" class="form-label">Seleccionar archivo de respaldo:</label>
+                        <input type="file" class="form-control" id="backupFile" accept=".db,.sqlite,.sqlite3">
+                        <div class="form-text">
+                            Archivos SQLite (.db, .sqlite, .sqlite3)
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button class="btn btn-info" onclick="restoreBackup()" disabled>
+                            <i class="fas fa-upload me-2"></i>
+                            Restaurar Base de Datos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Respaldos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-history me-2"></i>
+                        Historial de Respaldos Recientes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Próximamente:</strong> El historial de respaldos será implementado en la siguiente versión.
+                        Por ahora, los respaldos se guardan en la carpeta <code>backups/</code> del proyecto.
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Nombre</th>
+                                    <th>Tamaño</th>
+                                    <th>Descripción</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ today|date:"d/m/Y H:i" }}</td>
+                                    <td>backup_sistema_actual.db</td>
+                                    <td>{{ db_info.size_mb }} MB</td>
+                                    <td>Base de datos actual (en uso)</td>
+                                    <td><span class="badge bg-success">Activa</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" disabled>
+                                            <i class="fas fa-eye"></i> Ver
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        <em>No hay respaldos adicionales registrados</em>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Herramientas Adicionales -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-secondary">
+                        <i class="fas fa-tools me-2"></i>
+                        Herramientas de Mantenimiento
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-primary w-100" onclick="optimizeDatabase()">
+                                <i class="fas fa-compress-alt d-block mb-2"></i>
+                                Optimizar BD
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-info w-100" onclick="checkIntegrity()">
+                                <i class="fas fa-shield-alt d-block mb-2"></i>
+                                Verificar Integridad
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-warning w-100" onclick="exportData()">
+                                <i class="fas fa-file-export d-block mb-2"></i>
+                                Exportar Datos
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-secondary w-100" onclick="viewLogs()">
+                                <i class="fas fa-file-alt d-block mb-2"></i>
+                                Ver Logs
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Habilitar botón de restaurar cuando se seleccione archivo
+document.getElementById('backupFile').addEventListener('change', function() {
+    const restoreBtn = document.querySelector('button[onclick="restoreBackup()"]');
+    restoreBtn.disabled = !this.files.length;
+});
+
+function createBackup() {
+    const name = document.getElementById('backupName').value;
+    const description = document.getElementById('backupDescription').value;
+    
+    if (!name.trim()) {
+        alert('Por favor ingrese un nombre para el respaldo.');
+        return;
+    }
+    
+    if (confirm(`¿Crear respaldo con el nombre "${name}"?\n\nEsto puede tomar unos minutos dependiendo del tamaño de la base de datos.`)) {
+        // Aquí se implementará la lógica de respaldo
+        alert('Funcionalidad de respaldo será implementada próximamente.\n\nEl respaldo se guardará en: backups/' + name + '_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.db');
+    }
+}
+
+function restoreBackup() {
+    const fileInput = document.getElementById('backupFile');
+    
+    if (!fileInput.files.length) {
+        alert('Por favor seleccione un archivo de respaldo.');
+        return;
+    }
+    
+    const fileName = fileInput.files[0].name;
+    
+    if (confirm(`⚠️ ATENCIÓN ⚠️\n\n¿Está completamente seguro de restaurar desde "${fileName}"?\n\nEsta acción:\n- Reemplazará TODOS los datos actuales\n- No se puede deshacer\n- Se recomienda crear un respaldo antes\n\n¿Continuar?`)) {
+        if (confirm('Última confirmación: ¿Proceder con la restauración?')) {
+            // Aquí se implementará la lógica de restauración
+            alert('Funcionalidad de restauración será implementada próximamente.\n\nAsegúrese de tener un respaldo actual antes de proceder.');
+        }
+    }
+}
+
+function optimizeDatabase() {
+    if (confirm('¿Optimizar la base de datos?\n\nEsto puede mejorar el rendimiento pero tomará unos minutos.')) {
+        alert('Optimización será implementada próximamente.\n\nEsta función ejecutará:\n- VACUUM\n- REINDEX\n- Análisis de estadísticas');
+    }
+}
+
+function checkIntegrity() {
+    alert('Verificación de integridad será implementada próximamente.\n\nEsta función verificará:\n- Integridad de la base de datos\n- Consistencia de las relaciones\n- Detección de datos corruptos');
+}
+
+function exportData() {
+    alert('Exportación de datos será implementada próximamente.\n\nOpciones disponibles:\n- CSV para análisis\n- JSON para migraciones\n- Reportes académicos');
+}
+
+function viewLogs() {
+    alert('Visualización de logs será implementada próximamente.\n\nMostrará:\n- Logs de acceso\n- Errores del sistema\n- Actividad de usuarios');
+}
+</script>
+
+<style>
+.border-left-warning { border-left: 0.25rem solid #f6c23e !important; }
+</style>
+{% endblock %}

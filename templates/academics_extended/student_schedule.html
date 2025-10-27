@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mi Horario - Sistema Académico{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/labalsa_styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0" style="color: var(--labalsa-dark-green); font-weight: 700;">
+                <i class="fas fa-calendar3 me-2"></i>Mi Horario
+            </h1>
+            <p class="text-muted">Horario académico {{ current_academic_year.year }}</p>
+        </div>
+    </div>
+
+    {% if student_profile %}
+        <!-- Información del curso -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="stats-card">
+                    <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Información del Curso</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Estudiante:</strong><br>
+                            {{ student_profile.user.get_full_name }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Curso:</strong><br>
+                            {{ my_course|default:"No asignado" }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Total de Materias:</strong><br>
+                            {{ my_subjects.count }} materias
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Horario semanal (placeholder) -->
+        <div class="row">
+            <div class="col-12">
+                <div class="stats-card">
+                    <h5 class="mb-3"><i class="fas fa-calendar-week me-2"></i>Horario Semanal</h5>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-construction me-2"></i>
+                        <strong>Próximamente:</strong> El horario detallado estará disponible pronto. Mientras tanto, puedes consultar las materias y profesores asignados.
+                    </div>
+                    
+                    <!-- Tabla de materias y horas -->
+                    {% if my_subjects %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Materia</th>
+                                        <th>Área</th>
+                                        <th>Horas por Semana</th>
+                                        <th>Profesor Asignado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in my_assignments %}
+                                        <tr>
+                                            <td>
+                                                <strong style="color: var(--labalsa-dark-green);">{{ assignment.subject.name }}</strong>
+                                            </td>
+                                            <td>{{ assignment.subject.get_area_display }}</td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ assignment.subject.hours_per_week }}h</span>
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-user-tie me-1"></i>{{ assignment.teacher.get_full_name }}
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">
+                                                No hay materias asignadas
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2">Total Horas Semanales:</th>
+                                        <th>
+                                            {% with total_hours=my_subjects|length %}
+                                                {% if my_subjects %}
+                                                    {{ my_subjects.0.hours_per_week|add:my_subjects.1.hours_per_week|default:0 }}{% comment %}Esto es una simplificación{% endcomment %}
+                                                {% endif %}
+                                            {% endwith %}
+                                        </th>
+                                        <th></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No hay materias asignadas a tu curso actualmente.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="stats-card">
+                    <h6 class="mb-3"><i class="fas fa-clock me-2"></i>Horarios Importantes</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-sun text-warning me-2"></i><strong>Jornada Única:</strong> 7:00 AM - 12:00 PM</li>
+                        <li class="mb-2"><i class="fas fa-coffee text-success me-2"></i><strong>Recreo Matutino:</strong> 9:30 AM - 10:00 AM</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="stats-card">
+                    <h6 class="mb-3"><i class="fas fa-calendar-check me-2"></i>Próximos Eventos</h6>
+                    <div class="alert alert-light">
+                        <small class="text-muted">Los eventos y actividades especiales se mostrarán aquí próximamente.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+        <div class="alert alert-warning">
+            <h5><i class="fas fa-exclamation-triangle"></i> Perfil Incompleto</h5>
+            <p>Tu perfil de estudiante no está completamente configurado. Contacta a la secretaría académica para completar tu información.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+<!-- Dashboard para Profesores -->
+<div class="row">
+    <!-- Estadísticas del profesor -->
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ total_my_students }}</div>
+                    <div class="stats-label">Mis Estudiantes</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ my_assignments.count }}</div>
+                    <div class="stats-label">Materias Asignadas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-school"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ my_courses.count }}</div>
+                    <div class="stats-label">Cursos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="ms-3">
+                    <div class="stats-number">{{ pending_attendance }}</div>
+                    <div class="stats-label">Asistencias Pendientes</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Mis asignaciones -->
+    <div class="col-lg-6">
+        <div class="recent-activity">
+            <h5 class="mb-3"><i class="fas fa-chalkboard"></i> Mis Asignaciones</h5>
+            {% if my_assignments %}
+                {% for assignment in my_assignments %}
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ assignment.subject.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ assignment.course }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="role-badge">{{ assignment.subject.hours_per_week }}h/sem</span>
+                                <br>
+                                <a href="{% url 'academics_extended:quick_grade_entry' assignment.course.id assignment.subject.id %}" 
+                                   class="btn btn-sm btn-outline-success mt-1">
+                                    <i class="fas fa-edit"></i> Calificar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No tienes asignaciones para el año actual</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Calificaciones recientes -->
+    <div class="col-lg-6">
+        <div class="recent-activity">
+            <h5 class="mb-3"><i class="fas fa-star"></i> Calificaciones Recientes</h5>
+            {% if recent_grades %}
+                {% for grade in recent_grades %}
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ grade.student.user.get_full_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ grade.subject.name }} - {{ grade.activity_name }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="role-badge">{{ grade.grade_value }}/{{ grade.max_value }}</span>
+                                <br>
+                                <small class="text-muted">{{ grade.date_recorded }}</small>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No hay calificaciones registradas</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Acciones rápidas para profesores -->
+<!-- DEBUG: Template corregido v2.0 -->
+<div class="row">
+    <div class="col-12">
+        <div class="quick-actions">
+            <h5 class="mb-3"><i class="fas fa-bolt"></i> Acciones Rápidas</h5>
+            <a href="/academic-system/teacher/my-students/" class="action-btn">
+                <i class="fas fa-users"></i> Mis Estudiantes
+            </a>
+            <a href="/academic-system/teacher/my-subjects/" class="action-btn">
+                <i class="fas fa-star"></i> Mis Materias
+            </a>
+            <a href="/academic-system/teacher/my-courses/" class="action-btn">
+                <i class="fas fa-clipboard-check"></i> Mis Cursos
+            </a>
+            <a href="{% url 'projects:teacher:dashboard' %}" class="action-btn">
+                <i class="fas fa-school"></i> Proyectos
+            </a>
+        </div>
+    </div>
+</div>

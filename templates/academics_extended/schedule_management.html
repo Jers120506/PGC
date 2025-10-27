@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Sistema de Gestión de Horarios Académicos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .schedule-cell {
+            min-height: 100px;
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            font-size: 0.85em;
+            position: relative;
+        }
+        .schedule-item {
+            background: linear-gradient(135deg, #e7f3ff 0%, #d1ecf1 100%);
+            border: 1px solid #bee5eb;
+            border-radius: 6px;
+            padding: 6px;
+            margin: 3px 0;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .schedule-item:hover {
+            background: linear-gradient(135deg, #cceeff 0%, #b8e6f0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .time-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-weight: bold;
+            text-align: center;
+            padding: 12px;
+            border-right: 2px solid #dee2e6;
+        }
+        .day-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            padding: 15px;
+        }
+        .empty-cell {
+            background: #f8f9fa;
+            color: #6c757d;
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #dee2e6;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            border: none;
+            color: white;
+        }
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+            color: white;
+        }
+        .loading-spinner {
+            text-align: center;
+            padding: 50px;
+        }
+        .filter-card {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 1px solid #ffeaa7;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="text-primary">
+                        <i class="bi bi-calendar3"></i> Sistema de Gestión de Horarios Académicos
+                    </h1>
+                    <button class="btn btn-secondary" onclick="window.history.back()">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="row mb-4" id="stats-section">
+            <div class="col-md-2">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-check text-success fs-1"></i>
+                        <h4 class="mt-2 mb-0" id="total-schedules">-</h4>
+                        <small class="text-muted">Horarios Activos</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people text-primary fs-1"></i>
+                        <h4 class="mt-2 mb-0" id="total-teachers">-</h4>
+                        <small class="text-muted">Profesores</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-door-open text-info fs-1"></i>
+                        <h4 class="mt-2 mb-0" id="total-classrooms">-</h4>
+                        <small class="text-muted">Salones</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-book text-warning fs-1"></i>
+                        <h4 class="mt-2 mb-0" id="total-subjects">-</h4>
+                        <small class="text-muted">Materias</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-collection text-secondary fs-1"></i>
+                        <h4 class="mt-2 mb-0" id="total-courses">-</h4>
+                        <small class="text-muted">Cursos</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-clock text-danger fs-1"></i>
+                        <h4 class="mt-2 mb-0" id="total-timeslots">-</h4>
+                        <small class="text-muted">Franjas Horarias</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen del Sistema Mejorado -->
+        <div class="row mb-4" id="system-overview">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Estado del Sistema Académico</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card h-100 border-success">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title text-success">Cobertura de Cursos</h6>
+                                        <div class="progress mb-3" style="height: 20px;">
+                                            <div class="progress-bar bg-success" id="course-coverage-bar" style="width: 0%"></div>
+                                        </div>
+                                        <span id="course-coverage-text">Calculando...</span>
+                                        <p class="small text-muted mt-2">Cursos con horarios asignados</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100 border-info">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title text-info">Inscripción de Estudiantes</h6>
+                                        <div class="progress mb-3" style="height: 20px;">
+                                            <div class="progress-bar bg-info" id="enrollment-bar" style="width: 0%"></div>
+                                        </div>
+                                        <span id="enrollment-text">Calculando...</span>
+                                        <p class="small text-muted mt-2">Estudiantes asignados a cursos</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100 border-warning">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title text-warning">Utilización de Salones</h6>
+                                        <div class="progress mb-3" style="height: 20px;">
+                                            <div class="progress-bar bg-warning" id="classroom-usage-bar" style="width: 0%"></div>
+                                        </div>
+                                        <span id="classroom-usage-text">Calculando...</span>
+                                        <p class="small text-muted mt-2">Salones en uso activo</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Estado del Sistema:</strong> <span id="system-status">Evaluando...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Control -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-gear"></i> Panel de Control</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-gradient w-100" onclick="loadScheduleMatrix()">
+                                    <i class="bi bi-calendar3"></i> Ver Matriz de Horarios
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-success w-100" onclick="showCreateModal()">
+                                    <i class="bi bi-plus-circle"></i> Crear Horario
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-info w-100" onclick="loadSchedulesList()">
+                                    <i class="bi bi-list-ul"></i> Lista de Horarios
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-warning w-100" onclick="refreshData()">
+                                    <i class="bi bi-arrow-clockwise"></i> Actualizar Datos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="row mb-4" id="filters-section">
+            <div class="col-12">
+                <div class="card filter-card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="bi bi-funnel"></i> Filtros de Búsqueda</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <select class="form-select form-select-sm" id="filter-course">
+                                    <option value="">Todos los Cursos</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select form-select-sm" id="filter-teacher">
+                                    <option value="">Todos los Profesores</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select form-select-sm" id="filter-classroom">
+                                    <option value="">Todos los Salones</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select form-select-sm" id="filter-weekday">
+                                    <option value="">Todos los Días</option>
+                                    <option value="1">Lunes</option>
+                                    <option value="2">Martes</option>
+                                    <option value="3">Miércoles</option>
+                                    <option value="4">Jueves</option>
+                                    <option value="5">Viernes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select form-select-sm" id="filter-timeslot">
+                                    <option value="">Todas las Horas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <button class="btn btn-outline-primary w-100 btn-sm" onclick="applyFilters()" title="Aplicar filtros">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                            <div class="col-md-1">
+                                <button class="btn btn-outline-secondary w-100 btn-sm" onclick="clearFilters()" title="Limpiar filtros">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de Resultados -->
+        <div class="row">
+            <div class="col-12">
+                <div id="results-area">
+                    <div class="loading-spinner">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-3">Cargando datos del sistema...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Crear Horario -->
+    <div class="modal fade" id="createScheduleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Crear Nuevo Horario</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createScheduleForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Curso <span class="text-danger">*</span></label>
+                                <select class="form-select" name="course_id" required>
+                                    <option value="">Seleccionar Curso</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Materia <span class="text-danger">*</span></label>
+                                <select class="form-select" name="subject_id" required>
+                                    <option value="">Seleccionar Materia</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Profesor <span class="text-danger">*</span></label>
+                                <select class="form-select" name="teacher_id" required>
+                                    <option value="">Seleccionar Profesor</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Salón <span class="text-danger">*</span></label>
+                                <select class="form-select" name="classroom_id" required>
+                                    <option value="">Seleccionar Salón</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Día de la Semana <span class="text-danger">*</span></label>
+                                <select class="form-select" name="weekday" required>
+                                    <option value="">Seleccionar Día</option>
+                                    <option value="1">Lunes</option>
+                                    <option value="2">Martes</option>
+                                    <option value="3">Miércoles</option>
+                                    <option value="4">Jueves</option>
+                                    <option value="5">Viernes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Franja Horaria <span class="text-danger">*</span></label>
+                                <select class="form-select" name="time_slot_id" required>
+                                    <option value="">Seleccionar Horario</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notas (Opcional)</label>
+                            <textarea class="form-control" name="notes" rows="3" placeholder="Observaciones adicionales..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="createSchedule()">
+                        <i class="bi bi-check-circle"></i> Crear Horario
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let resources = null;
+        let currentFilters = {};
+        const API_BASE = '/academic-system';
+
+        // Función para obtener el CSRF token
+        function getCSRFToken() {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            if (metaTag) {
+                return metaTag.getAttribute('content');
+            }
+            
+            const name = 'csrftoken';
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue || '';
+        }
+
+        // Función para crear headers de autenticación
+        function getAuthHeaders() {
+            return {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken()
+            };
+        }
+
+        // Cargar datos al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof bootstrap === 'undefined') {
+                showError('Error: Bootstrap no está cargado. Verifica la conexión a internet.');
+                return;
+            }
+            
+            loadResources();
+            loadSystemOverview();
+        });
+
+        // Función para cargar recursos del sistema
+        async function loadResources() {
+            try {
+                const response = await fetch(`${API_BASE}/schedules/resources/`, {
+                    method: 'GET',
+                    headers: getAuthHeaders(),
+                    credentials: 'same-origin'
+                });
+                
+                if (response.status === 302 || response.status === 401) {
+                    showError('Error de autenticación. Por favor, inicia sesión primero.');
+                    return;
+                }
+                
+                if (response.status === 403) {
+                    showError('No tienes permisos para acceder a esta funcionalidad.');
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    resources = data.data;
+                    
+                    if (resources.courses?.length === 0) {
+                        showError('No hay cursos disponibles. Contacta al administrador.');
+                        return;
+                    }
+                    
+                    if (resources.teachers?.length === 0) {
+                        showError('No hay profesores disponibles. Contacta al administrador.');
+                        return;
+                    }
+                    
+                    updateStatistics(resources);
+                    populateFilters();
+                    populateModalSelects();
+                    loadScheduleMatrix();
+                } else {
+                    showError('Error al cargar recursos: ' + data.message);
+                }
+            } catch (error) {
+                showError('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Actualizar estadísticas
+        function updateStatistics(data) {
+            document.getElementById('total-schedules').textContent = '...';
+            document.getElementById('total-teachers').textContent = data.teachers.length;
+            document.getElementById('total-classrooms').textContent = data.classrooms.length;
+            document.getElementById('total-subjects').textContent = data.subjects.length;
+            document.getElementById('total-courses').textContent = data.courses.length;
+            document.getElementById('total-timeslots').textContent = data.time_slots.length;
+        }
+
+        // Llenar filtros de búsqueda
+        function populateFilters() {
+            if (!resources) return;
+
+            populateSelect('filter-course', resources.courses || [], 'name');
+            populateSelect('filter-teacher', resources.teachers || [], 'name');
+            populateSelect('filter-classroom', resources.classrooms || [], 'name');
+            populateSelect('filter-timeslot', resources.time_slots || [], 'name');
+            
+            // Añadir event listeners para filtrado automático
+            setupFilterListeners();
+        }
+        
+        function setupFilterListeners() {
+            // Evento automático al cambiar filtros
+            const filterSelectors = ['filter-course', 'filter-teacher', 'filter-classroom', 'filter-weekday', 'filter-timeslot'];
+            
+            filterSelectors.forEach(filterId => {
+                const filterElement = document.getElementById(filterId);
+                if (filterElement) {
+                    filterElement.addEventListener('change', function() {
+                        // Aplicar filtros automáticamente cuando cambie cualquier filtro
+                        applyFilters();
+                    });
+                }
+            });
+        }
+
+        // Llenar opciones del modal
+        function populateModalSelects() {
+            if (!resources) return;
+
+            populateSelect('#createScheduleForm select[name="course_id"]', resources.courses || [], 'name');
+            populateSelect('#createScheduleForm select[name="subject_id"]', resources.subjects || [], 'name');
+            populateSelect('#createScheduleForm select[name="teacher_id"]', resources.teachers || [], 'name');
+            populateSelect('#createScheduleForm select[name="classroom_id"]', resources.classrooms || [], 'name');
+            populateSelect('#createScheduleForm select[name="time_slot_id"]', resources.time_slots || [], 'name');
+        }
+
+        function populateSelect(selector, items, textField) {
+            const select = document.querySelector(selector);
+            if (!select) {
+                // Intentar selector sin prefijo para modal
+                const altSelector = selector.replace('#createScheduleForm ', '');
+                const altSelect = document.querySelector(altSelector);
+                if (altSelect) {
+                    return populateSelect(altSelector, items, textField);
+                }
+                console.warn('Selector no encontrado:', selector);
+                return;
+            }
+            
+            // Guardar la primera opción (ej: "Todos los Cursos")
+            const firstOption = select.options[0] ? select.options[0].cloneNode(true) : null;
+            select.innerHTML = '';
+            
+            // Re-añadir la primera opción si existe
+            if (firstOption) {
+                select.appendChild(firstOption);
+            }
+            
+            if (items.length === 0) {
+                const noDataOption = document.createElement('option');
+                noDataOption.value = '';
+                noDataOption.textContent = 'No hay datos disponibles';
+                noDataOption.disabled = true;
+                select.appendChild(noDataOption);
+                return;
+            }
+            
+            // Añadir opciones de los items
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item[textField] || item.name || `Item ${item.id}`;
+                select.appendChild(option);
+            });
+        }
+
+        // Cargar matriz de horarios
+        async function loadScheduleMatrix() {
+            try {
+                showLoading();
+                
+                // Construir URL con filtros si existen
+                let url = `${API_BASE}/schedules/matrix/`;
+                const params = new URLSearchParams();
+                
+                Object.keys(currentFilters).forEach(key => {
+                    if (currentFilters[key] && currentFilters[key] !== '') {
+                        params.append(key, currentFilters[key]);
+                    }
+                });
+                
+                if (params.toString()) {
+                    url += `?${params.toString()}`;
+                }
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: getAuthHeaders(),
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    displayScheduleMatrix(data.data);
+                    document.getElementById('total-schedules').textContent = data.data.total_schedules;
+                } else {
+                    showError('Error al cargar matriz: ' + data.message);
+                }
+            } catch (error) {
+                showError('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Mostrar matriz de horarios
+        function displayScheduleMatrix(data) {
+            const weekdays = data.weekdays;
+            const matrix = data.matrix;
+            
+            let html = `
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calendar3"></i> Matriz de Horarios - ${data.academic_year}
+                            <span class="badge bg-light text-dark ms-2">${data.total_schedules} horarios</span>
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="time-header" style="width: 150px;">Horario</th>
+                                        ${weekdays.map(day => 
+                                            `<th class="day-header">${day.name}</th>`
+                                        ).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+            `;
+            
+            matrix.forEach(timeSlotData => {
+                html += `
+                    <tr>
+                        <td class="time-header">
+                            <strong>${timeSlotData.time_slot.name}</strong><br>
+                            <small class="text-muted">${timeSlotData.time_slot.start_time} - ${timeSlotData.time_slot.end_time}</small>
+                        </td>
+                `;
+                
+                weekdays.forEach(day => {
+                    const daySchedules = timeSlotData.days[day.value].schedules;
+                    html += `<td class="schedule-cell">`;
+                    
+                    if (daySchedules.length > 0) {
+                        daySchedules.forEach(schedule => {
+                            html += `
+                                <div class="schedule-item" title="Doble clic para editar" ondblclick="editSchedule(${schedule.id})">
+                                    <strong class="text-primary">${schedule.subject.name}</strong><br>
+                                    <small><i class="bi bi-people"></i> ${schedule.course.name}</small><br>
+                                    <small><i class="bi bi-person"></i> ${schedule.teacher.name}</small><br>
+                                    <small><i class="bi bi-door-open"></i> ${schedule.classroom.name}</small>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        html += `<div class="empty-cell"><small>Libre</small></div>`;
+                    }
+                    
+                    html += `</td>`;
+                });
+                
+                html += `</tr>`;
+            });
+            
+            html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('results-area').innerHTML = html;
+        }
+
+        // Cargar lista de horarios
+        async function loadSchedulesList() {
+            try {
+                showLoading();
+                
+                // Construir URL con filtros
+                let url = `${API_BASE}/schedules/`;
+                const params = new URLSearchParams();
+                
+                Object.keys(currentFilters).forEach(key => {
+                    if (currentFilters[key] && currentFilters[key] !== '') {
+                        params.append(key, currentFilters[key]);
+                    }
+                });
+                
+                if (params.toString()) {
+                    url += `?${params.toString()}`;
+                }
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: getAuthHeaders(),
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    displaySchedulesList(data.data);
+                } else {
+                    showError('Error al cargar horarios: ' + data.message);
+                }
+            } catch (error) {
+                showError('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Mostrar lista de horarios
+        function displaySchedulesList(schedules) {
+            let html = `
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-ul"></i> Lista de Horarios
+                            <span class="badge bg-light text-dark ms-2">${schedules.length} horarios</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th><i class="bi bi-calendar-date"></i> Día</th>
+                                        <th><i class="bi bi-clock"></i> Horario</th>
+                                        <th><i class="bi bi-people"></i> Curso</th>
+                                        <th><i class="bi bi-book"></i> Materia</th>
+                                        <th><i class="bi bi-person"></i> Profesor</th>
+                                        <th><i class="bi bi-door-open"></i> Salón</th>
+                                        <th><i class="bi bi-gear"></i> Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+            `;
+            
+            schedules.forEach(schedule => {
+                html += `
+                    <tr>
+                        <td><span class="badge bg-primary">${schedule.weekday_name}</span></td>
+                        <td>
+                            <strong>${schedule.time_slot.name}</strong><br>
+                            <small class="text-muted">${schedule.time_slot.start_time}-${schedule.time_slot.end_time}</small>
+                        </td>
+                        <td>${schedule.course.name}</td>
+                        <td><span class="badge bg-secondary">${schedule.subject.name}</span></td>
+                        <td>${schedule.teacher.name}</td>
+                        <td>${schedule.classroom.name}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editSchedule(${schedule.id})" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteSchedule(${schedule.id})" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('results-area').innerHTML = html;
+        }
+
+        // Mostrar modal de creación
+        function showCreateModal() {
+            if (!resources) {
+                showError('Los recursos del sistema no están cargados. Por favor, espera a que se carguen o recarga la página.');
+                return;
+            }
+            
+            if (!resources.courses || resources.courses.length === 0) {
+                showError('No hay cursos disponibles para crear horarios.');
+                return;
+            }
+            
+            if (!resources.teachers || resources.teachers.length === 0) {
+                showError('No hay profesores disponibles para crear horarios.');
+                return;
+            }
+            
+            if (!resources.classrooms || resources.classrooms.length === 0) {
+                showError('No hay salones disponibles para crear horarios.');
+                return;
+            }
+            
+            if (!resources.time_slots || resources.time_slots.length === 0) {
+                showError('No hay franjas horarias disponibles para crear horarios.');
+                return;
+            }
+            
+            document.getElementById('createScheduleForm').reset();
+            populateModalSelects();
+            
+            const modal = new bootstrap.Modal(document.getElementById('createScheduleModal'));
+            modal.show();
+        }
+
+        // Crear horario
+        async function createSchedule() {
+            const form = document.getElementById('createScheduleForm');
+            const formData = new FormData(form);
+            
+            const data = {};
+            const requiredFields = {
+                'course_id': 'Curso',
+                'subject_id': 'Materia', 
+                'teacher_id': 'Profesor',
+                'classroom_id': 'Salón',
+                'time_slot_id': 'Franja Horaria',
+                'weekday': 'Día de la semana'
+            };
+            
+            let missingFields = [];
+            let invalidFields = [];
+            
+            for (let [key, value] of formData.entries()) {
+                const trimmedValue = value.trim();
+                data[key] = trimmedValue;
+                
+                if (requiredFields[key]) {
+                    if (!trimmedValue || trimmedValue === '') {
+                        missingFields.push(requiredFields[key]);
+                    } else {
+                        if (['course_id', 'subject_id', 'teacher_id', 'classroom_id', 'time_slot_id', 'weekday'].includes(key)) {
+                            if (isNaN(trimmedValue) || trimmedValue === '0') {
+                                invalidFields.push(requiredFields[key]);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (missingFields.length > 0) {
+                showError(`Campos requeridos faltantes: ${missingFields.join(', ')}`);
+                return;
+            }
+            
+            if (invalidFields.length > 0) {
+                showError(`Campos con valores inválidos: ${invalidFields.join(', ')}. Asegúrate de seleccionar una opción válida.`);
+                return;
+            }
+            
+            try {
+                showLoading();
+                
+                const response = await fetch(`${API_BASE}/schedules/create/`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    credentials: 'same-origin',
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                hideLoading();
+                
+                if (result.status === 'success') {
+                    showSuccess('Horario creado exitosamente');
+                    const modalElement = document.getElementById('createScheduleModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    }
+                    form.reset();
+                    refreshData();
+                } else {
+                    showError('Error: ' + result.message);
+                }
+            } catch (error) {
+                hideLoading();
+                showError('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Aplicar filtros - FUNCIÓN CORREGIDA
+        function applyFilters() {
+            // Leer valores de filtros
+            const courseId = document.getElementById('filter-course').value;
+            const teacherId = document.getElementById('filter-teacher').value;
+            const classroomId = document.getElementById('filter-classroom').value;
+            const weekday = document.getElementById('filter-weekday').value;
+            const timeslotId = document.getElementById('filter-timeslot').value;
+            
+            // Actualizar filtros actuales
+            currentFilters = {};
+            if (courseId) currentFilters.course_id = courseId;
+            if (teacherId) currentFilters.teacher_id = teacherId;
+            if (classroomId) currentFilters.classroom_id = classroomId;
+            if (weekday) currentFilters.weekday = weekday;
+            if (timeslotId) currentFilters.time_slot_id = timeslotId;
+            
+            // Recargar la matriz con filtros
+            loadScheduleMatrix();
+            
+            // Mostrar mensaje de filtros aplicados (solo si hay filtros activos)
+            const activeFilters = Object.keys(currentFilters).length;
+            if (activeFilters > 0) {
+                showNotification(`Filtros aplicados: ${activeFilters} criterio(s) activo(s)`, 'success');
+            }
+        }
+        
+        // Limpiar todos los filtros
+        function clearFilters() {
+            // Limpiar valores de los filtros
+            document.getElementById('filter-course').value = '';
+            document.getElementById('filter-teacher').value = '';
+            document.getElementById('filter-classroom').value = '';
+            document.getElementById('filter-weekday').value = '';
+            document.getElementById('filter-timeslot').value = '';
+            
+            // Limpiar filtros actuales
+            currentFilters = {};
+            
+            // Recargar sin filtros
+            loadScheduleMatrix();
+            
+            showNotification('Filtros removidos - mostrando todos los horarios', 'info');
+        }
+
+        // Actualizar datos
+        function refreshData() {
+            loadResources();
+            loadSystemOverview();
+        }
+
+        // Cargar resumen del sistema mejorado
+        function loadSystemOverview() {
+            fetch(`${API_BASE}/schedules/system-overview/`, {
+                method: 'GET',
+                headers: getAuthHeaders(),
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    updateSystemOverviewDisplay(data.data);
+                }
+            })
+            .catch(error => {
+                console.error('Error de conexión cargando resumen:', error);
+            });
+        }
+
+        function updateSystemOverviewDisplay(systemData) {
+            document.getElementById('total-schedules').textContent = systemData.schedule_stats.total_schedules;
+            document.getElementById('total-teachers').textContent = systemData.general_stats.total_teachers;
+            document.getElementById('total-classrooms').textContent = systemData.general_stats.total_classrooms;
+            document.getElementById('total-subjects').textContent = systemData.general_stats.total_subjects;
+            document.getElementById('total-courses').textContent = systemData.general_stats.total_courses;
+            document.getElementById('total-timeslots').textContent = systemData.general_stats.total_time_slots;
+
+            const courseCoverage = systemData.schedule_stats.course_coverage_percent;
+            const enrollmentRate = systemData.student_stats.enrollment_rate_percent;
+            const classroomUtilization = systemData.classroom_stats.classroom_utilization_percent;
+
+            document.getElementById('course-coverage-bar').style.width = courseCoverage + '%';
+            document.getElementById('course-coverage-text').textContent = 
+                `${systemData.schedule_stats.courses_with_schedules}/${systemData.general_stats.total_courses} cursos (${courseCoverage}%)`;
+
+            document.getElementById('enrollment-bar').style.width = enrollmentRate + '%';
+            document.getElementById('enrollment-text').textContent = 
+                `${systemData.student_stats.students_with_course}/${systemData.general_stats.total_students} estudiantes (${enrollmentRate}%)`;
+
+            document.getElementById('classroom-usage-bar').style.width = classroomUtilization + '%';
+            document.getElementById('classroom-usage-text').textContent = 
+                `${systemData.classroom_stats.classrooms_in_use}/${systemData.general_stats.total_classrooms} salones (${classroomUtilization}%)`;
+
+            // Solo mostrar estado general del sistema sin detalles específicos
+            document.getElementById('system-status').textContent = `Sistema académico operativo - ${systemData.schedule_stats.total_schedules} horarios activos`;
+
+            const alertElement = document.querySelector('#system-overview .alert');
+            alertElement.className = 'alert ';
+            
+            // Determinar estado basado en datos del sistema
+            const systemStatus = systemData.system_efficiency || 'Operativo';
+            if (courseCoverage >= 80 && enrollmentRate >= 80) {
+                alertElement.className += 'alert-success';
+            } else if (courseCoverage >= 60 && enrollmentRate >= 60) {
+                alertElement.className += 'alert-warning';
+            } else {
+                alertElement.className += 'alert-info';
+            }
+        }
+
+        // Funciones auxiliares
+        function editSchedule(scheduleId) {
+            // Implementar modal de edición
+            fetch(`${API_BASE}/schedules/${scheduleId}/`, {
+                method: 'GET',
+                headers: getAuthHeaders(),
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const schedule = data.data;
+                    showEditScheduleModal(schedule);
+                } else {
+                    showError('Error al cargar horario: ' + data.message);
+                }
+            })
+            .catch(error => {
+                showError('Error de conexión: ' + error.message);
+            });
+        }
+        
+        function showEditScheduleModal(schedule) {
+            // Crear modal dinámicamente para edición
+            const modalHtml = `
+                <div class="modal fade" id="editScheduleModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Editar Horario</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="editScheduleForm">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Curso</label>
+                                            <select class="form-select" name="course_id" required>
+                                                <option value="">Seleccionar curso...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Materia</label>
+                                            <select class="form-select" name="subject_id" required>
+                                                <option value="">Seleccionar materia...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Profesor</label>
+                                            <select class="form-select" name="teacher_id" required>
+                                                <option value="">Seleccionar profesor...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Salón</label>
+                                            <select class="form-select" name="classroom_id" required>
+                                                <option value="">Seleccionar salón...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Día</label>
+                                            <select class="form-select" name="weekday" required>
+                                                <option value="">Seleccionar día...</option>
+                                                <option value="1">Lunes</option>
+                                                <option value="2">Martes</option>
+                                                <option value="3">Miércoles</option>
+                                                <option value="4">Jueves</option>
+                                                <option value="5">Viernes</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Franja Horaria</label>
+                                            <select class="form-select" name="time_slot_id" required>
+                                                <option value="">Seleccionar franja...</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="button" class="btn btn-primary" onclick="updateSchedule(${schedule.id})">Actualizar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remover modal existente si existe
+            const existingModal = document.getElementById('editScheduleModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Añadir nuevo modal
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Poblar los selects con datos actuales
+            populateSelect('#editScheduleForm select[name="course_id"]', resources.courses || [], 'name');
+            populateSelect('#editScheduleForm select[name="subject_id"]', resources.subjects || [], 'name');
+            populateSelect('#editScheduleForm select[name="teacher_id"]', resources.teachers || [], 'name');
+            populateSelect('#editScheduleForm select[name="classroom_id"]', resources.classrooms || [], 'name');
+            populateSelect('#editScheduleForm select[name="time_slot_id"]', resources.time_slots || [], 'name');
+            
+            // Establecer valores actuales
+            setTimeout(() => {
+                document.querySelector('#editScheduleForm select[name="course_id"]').value = schedule.course.id;
+                document.querySelector('#editScheduleForm select[name="subject_id"]').value = schedule.subject.id;
+                document.querySelector('#editScheduleForm select[name="teacher_id"]').value = schedule.teacher.id;
+                document.querySelector('#editScheduleForm select[name="classroom_id"]').value = schedule.classroom.id;
+                document.querySelector('#editScheduleForm select[name="weekday"]').value = schedule.weekday;
+                document.querySelector('#editScheduleForm select[name="time_slot_id"]').value = schedule.time_slot.id;
+            }, 100);
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('editScheduleModal'));
+            modal.show();
+        }
+        
+        async function updateSchedule(scheduleId) {
+            const form = document.getElementById('editScheduleForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                showLoading();
+                
+                const response = await fetch(`${API_BASE}/schedules/${scheduleId}/`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    credentials: 'same-origin',
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                hideLoading();
+                
+                if (result.status === 'success') {
+                    showSuccess('Horario actualizado exitosamente');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editScheduleModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                    refreshData();
+                } else {
+                    showError('Error: ' + result.message);
+                }
+            } catch (error) {
+                hideLoading();
+                showError('Error de conexión: ' + error.message);
+            }
+        }
+
+        function deleteSchedule(scheduleId) {
+            if (confirm('¿Está seguro de eliminar este horario?')) {
+                fetch(`${API_BASE}/schedules/${scheduleId}/`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders(),
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showSuccess('Horario eliminado exitosamente');
+                        refreshData();
+                    } else {
+                        showError('Error al eliminar: ' + data.message);
+                    }
+                })
+                .catch(error => showError('Error de conexión: ' + error.message));
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('results-area').innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3">Cargando datos...</p>
+                </div>
+            `;
+        }
+
+        function hideLoading() {
+            // La función hideLoading se maneja automáticamente cuando se actualiza results-area
+        }
+
+        function showError(message) {
+            document.getElementById('results-area').innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i> <strong>Error:</strong> ${message}
+                </div>
+            `;
+        }
+
+        function showSuccess(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show notification';
+            alert.innerHTML = `
+                <i class="bi bi-check-circle"></i> <strong>Éxito:</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        function showNotification(message, type = 'info') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show notification`;
+            alert.innerHTML = `
+                <i class="bi bi-info-circle"></i> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
